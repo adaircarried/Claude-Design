@@ -1,0 +1,27 @@
+{
+  "extraKnownMarketplaces": {
+    "esp32-marketplace": {
+      "source": {
+        "source": "settings",
+        "name": "esp32-marketplace",
+        "owner": {
+          "name": "ezrover",
+          "url": "https://github.com/ezrover"
+        },
+        "plugins": [
+          {
+            "name": "ESP32",
+            "description": "Expert ESP32 embedded systems guidance — chip selection, GPIO validation, code generation (Arduino/ESP-IDF), LVGL UI, and Waveshare board references.",
+            "source": {
+              "source": "github",
+              "repo": "ezrover/ESP32-AI-Agent-Skill"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "enabledPlugins": {
+    "ESP32@esp32-marketplace": true
+  }
+}
