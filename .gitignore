@@ -1,7 +1,6 @@
-build/
-sdkconfig
-sdkconfig.old
+.pio/
+.pioenvs/
+.piolibdeps/
 .vscode/
 .DS_Store
-managed_components/
-dependencies.lock
+*.pyc
