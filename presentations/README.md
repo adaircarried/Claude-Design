@@ -10,7 +10,7 @@ ILUO skill path.
 | Plant tutor | Fernando Robledo |
 | Audience | Plant manager · HR · Engineering manager |
 | Date | 25 September 2026 |
-| Length | 12 slides · ~15 min · English |
+| Length | 13 slides · ~15 min · English |
 
 ## Files
 
@@ -30,8 +30,15 @@ pip install python-pptx
 python3 deck.py /path/to/Presentacion_de_becarios.pptx
 ```
 
+## Narrative
+
+Every slide carries a **message title** — it states its conclusion rather than
+naming its topic — with a small eyebrow above it for the section and a support
+line below it for the evidence. Slide 3 is the executive summary, placed up
+front so the argument is complete within the first three minutes.
+
 ## Still to fill in
 
-Slide 7 (*The integration project*) carries four bracketed placeholders — what
+Slide 8 (*The integration project*) carries four bracketed placeholders — what
 the integration is, the role, what it taught, and its status. Everything else
 is final.
