@@ -10,7 +10,7 @@ ILUO skill path.
 | Plant tutor | Fernando Robledo |
 | Audience | Plant manager · HR · Engineering manager |
 | Date | 25 September 2026 |
-| Length | 13 slides · ~15 min · English |
+| Length | 15 slides · ~15 min · English |
 
 ## Files
 
@@ -38,9 +38,13 @@ helps, a support line below it for the evidence. Slide 3 is the executive
 summary, placed up front so the argument is complete within the first three
 minutes.
 
-Slides are deliberately sparse. Roughly 1,150 words of narration live in the
-speaker notes, not on the slides, which is about nine minutes spoken and leaves
-room for questions.
+Slides are deliberately sparse. Roughly 1,400 words of narration live in the
+speaker notes, not on the slides, which is about eleven minutes spoken and
+leaves room for questions.
+
+Slides 6 and 7 are the Level I focus the plant supervisor asked for: the nine
+topics and their single exam, then the audit of the two source documents and
+the five gaps neither of them closes.
 
 ## Transitions
 
@@ -51,8 +55,22 @@ share the shape names `!!iluo_I` through `!!iluo_O`, which forces PowerPoint to
 match them, so the level cards animate down into the scorecard rows instead of
 cross-fading. Keep those names if you edit those two slides.
 
+## Images
+
+`assets/` holds three generic images lifted from the corporate template: the
+Core Values poster, a road photo and a product collage. Two of them are
+placeholders for real photographs:
+
+| Slide | Image | Replace with |
+|---|---|---|
+| 4, Where I work | `producto.jpg` | A photograph of the welding cell |
+| 10, The integration project | `carretera.jpg` | A photograph of the integration |
+
+`valores_tenneco.png` on slide 2 is the official Core Values poster and stays
+as it is.
+
 ## Still to fill in
 
-Slide 8 (*The integration project*) carries four bracketed placeholders — what
+Slide 10 (*The integration project*) carries four bracketed placeholders: what
 the integration is, the role, what it taught, and its status. Everything else
 is final.

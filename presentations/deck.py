@@ -112,6 +112,16 @@ def dash(slide, x, y, w=0.69, color=LIME, lw=2.25):
     ln.line.width = Pt(lw)
     return ln
 
+ASSETS = os.path.join(HERE, "assets")
+
+def img(slide, name, x, y, w=None, h=None):
+    """Imagen generica del template. Diego las reemplaza por fotos reales."""
+    kw = {}
+    if w: kw["width"] = Inches(w)
+    if h: kw["height"] = Inches(h)
+    return slide.shapes.add_picture(os.path.join(ASSETS, name),
+                                    Inches(x), Inches(y), **kw)
+
 def chev(slide, x, y, size=0.22, color=LIME, n=2, gap=0.16):
     """Brand chevron motif, used as the marker that carries the eye forward."""
     for i in range(n):
@@ -203,15 +213,16 @@ notes[0] = (
 s = new("Standard_Dark", 2, dark=True)
 head(s, "OUR VALUES", None, None, dark=True)
 
+img(s, "valores_tenneco.png", 9.42, 1.42, h=4.9)
 tb, tf = txbox(s, 0.5, 1.58, 8.0, 1.6)
 para(tf, "WIN", 108, LIME, bold=True, first=True)
 
-tb, tf = txbox(s, 0.56, 3.5, 10.4, 0.4)
+tb, tf = txbox(s, 0.56, 3.5, 8.4, 0.4)
 para(tf, "“We must earn the trust of our employees and customers.”",
      17, GRAYL, italic=True, first=True)
 
-rect(s, 0.5, 4.5, 12.33, 0.02, fill=RULE)
-tb, tf = txbox(s, 0.56, 4.96, 11.4, 0.9)
+rect(s, 0.5, 4.5, 8.6, 0.02, fill=RULE)
+tb, tf = txbox(s, 0.56, 4.96, 8.5, 0.9)
 para(tf, "Nobody hands an intern a welding torch.", 26, WHITE, bold=True,
      first=True)
 para(tf, "You earn it.", 26, LIME, bold=True, space_before=6)
@@ -269,15 +280,18 @@ for i, (lbl, big) in enumerate([("PRODUCT",   "Exhaust systems"),
                                 ("ROBOTS",    "Yaskawa"),
                                 ("EQUIPMENT", "SKS, Miller")]):
     x = 0.5 + i * CSTEP
-    rect(s, x, 2.3, CW, 2.0, fill=TINT)
-    tb, tf = txbox(s, x + 0.3, 2.66, CW - 0.6, 1.3)
+    rect(s, x, 2.28, CW, 1.9, fill=TINT)
+    tb, tf = txbox(s, x + 0.3, 2.6, CW - 0.6, 1.3)
     para(tf, lbl, 9.5, BLUE, bold=True, first=True)
     para(tf, big, 20, NAVY, bold=True, space_before=12, spacing=1.08)
 
-rect(s, 0.5, 4.86, 12.33, 1.3, fill=NAVY)
-tb, tf = txbox(s, 0.92, 5.16, 11.5, 0.7, anchor=MSO_ANCHOR.MIDDLE)
-para(tf, "So I could not learn by waiting for a breakdown.", 20, LIME,
-     bold=True, first=True)
+# imagen generica del template: Diego la cambia por una foto de su celda
+img(s, "producto.jpg", 0.5, 4.5, h=1.95)
+rect(s, 6.72, 4.5, 6.11, 1.95, fill=NAVY)
+tb, tf = txbox(s, 7.1, 4.78, 5.4, 1.4, anchor=MSO_ANCHOR.MIDDLE)
+para(tf, "So I could not learn by waiting for a breakdown.", 19, LIME,
+     bold=True, first=True, spacing=1.14)
+para(tf, "My hours went wherever the work was.", 13, GRAYL, space_before=10)
 
 notes[3] = (
     "Quick context. We weld exhaust systems, robotic GMAW, mostly Yaskawa "
@@ -323,8 +337,87 @@ notes[4] = (
     "is not designed to certify one person. It is designed so that one person "
     "multiplies.")
 
-# ============================================================ 6 · scorecard
+# ============================================================ 6 · nivel I
+# El supervisor pidio enfocar el nivel I. Estas dos laminas son ese enfoque.
 s = new("Standard_Light", 6, dark=False)
+head(s, "LEVEL I IN DETAIL", "Nine topics, one exam, one passing mark",
+     "4 hours  ·  written exam  ·  minimum 8.0", dark=False)
+b = badge(s, 11.95, 0.86, 0.88, "I", NAVY, LIME, 32)
+b.name = "!!iluo_I"
+
+TEMAS = ["Welding safety", "GMAW equipment", "Metal transfer modes",
+         "Process variables", "GMAW discontinuities", "Joint geometry",
+         "Welding positions", "Welding symbols", "Welding control documents"]
+TW, TS, TH = 3.95, 4.19, 1.28
+for i, t in enumerate(TEMAS):
+    x = 0.5 + (i % 3) * TS
+    y = 2.3 + (i // 3) * 1.46
+    rect(s, x, y, TW, TH, fill=TINT)
+    tb, tf = txbox(s, x + 0.32, y + 0.2, TW - 0.64, 0.9)
+    para(tf, "%02d" % (i + 1), 15, BLUE, bold=True, first=True)
+    para(tf, t, 16, NAVY, bold=True, space_before=6, spacing=1.12)
+
+tb, tf = txbox(s, 0.5, 6.76, 12.33, 0.3)
+para(tf, "Twenty of the forty ILUO hours sit above this level, but none of "
+         "them open until this exam is passed.", 12.5, MUTED, first=True)
+
+notes[5] = (
+    "My supervisor asked me to focus this review on level I, so here it is in "
+    "full. Nine topics, four hours, and a single written exam with a passing "
+    "mark of eight out of ten. Safety, equipment, transfer modes, process "
+    "variables, discontinuities, joint geometry, positions, symbols and "
+    "control documents. The reason this level matters more than it looks is "
+    "the line at the bottom: twenty of the forty hours in the whole matrix "
+    "sit above it, and none of them open until this exam is passed. Level I "
+    "is the gate.")
+
+# ============================================================ 7 · preparacion
+s = new("Standard_Dark", 7, dark=True)
+head(s, "HOW I AM PREPARING",
+     "616 pages, and five gaps neither of them closes", None, dark=True)
+
+FUENTES = [("CWI MANUAL, COMIMSA", "440 pages",
+            "Covers five of the nine topics well: symbols, joint geometry, "
+            "discontinuities, positions and safety."),
+           ("CES-S-MANF-150, CUMMINS", "176 pages",
+            "Turns that theory into numbers I can be held to: essential "
+            "variables, work angle, CTWD, acceptance limits.")]
+y = 1.9
+for titulo, vol, cuerpo in FUENTES:
+    rect(s, 0.5, y, 7.3, 2.24, fill=CARD)
+    tb, tf = txbox(s, 0.86, y + 0.3, 6.6, 1.7)
+    para(tf, titulo, 10, MUTEDD, bold=True, first=True)
+    para(tf, vol, 26, LIME, bold=True, space_before=6)
+    para(tf, cuerpo, 13, GRAYL, space_before=10, spacing=1.2)
+    y += 2.44
+
+rect(s, 8.14, 1.9, 4.69, 4.44, fill=CARD)
+tb, tf = txbox(s, 8.5, 2.2, 4.0, 3.8)
+para(tf, "WHAT NEITHER ONE COVERS", 10, LIME, bold=True, first=True)
+for hueco in ("Robotic cell safety", "Constant voltage V-A curve",
+              "Transition current", "ISO 2553 symbols",
+              "The Tenneco parameter sheet"):
+    para(tf, hueco, 14, WHITE, space_before=20)
+
+tb, tf = txbox(s, 0.5, 6.62, 12.33, 0.34)
+para(tf, "I mapped both documents page by page. The gaps are mine to close, "
+         "and I know exactly what they are.", 15, LIME, bold=True, first=True)
+
+notes[6] = (
+    "I did not just receive the material, I audited it. Six hundred and "
+    "sixteen pages between the two. The COMIMSA manual is a welding inspector "
+    "course, so it is excellent at what you look at and measure: symbols, "
+    "joint geometry, discontinuities, positions. The Cummins standard is the "
+    "other half. It takes that theory and puts numbers on it that we are "
+    "contractually held to. For example, our matrix says adjust the essential "
+    "variables. The standard says wire feed speed, current and voltage within "
+    "five percent, travel speed within ten, or the procedure has to be "
+    "revalidated. And then the panel on the right is what I found missing in "
+    "both, including robotic cell safety, which neither document mentions "
+    "once. Those five are mine to close, and I already know what they are.")
+
+# ============================================================ 8 · scorecard
+s = new("Standard_Light", 8, dark=False)
 head(s, "WHERE I STAND TODAY",
      "Four skills unsupervised, none of them validated", None, dark=False)
 
@@ -366,7 +459,7 @@ para(tf, "I learned Level I in the cell, not in a classroom. The exam has not "
          "happened, so nothing is validated yet.", 15, WHITE, first=True,
      spacing=1.16)
 
-notes[5] = (
+notes[7] = (
     "Each square is one skill. Four of the twenty three I execute with nobody "
     "standing next to me: consumable changes, which means contact tip, liner, "
     "nozzle, diffuser and rollers; essential variable adjustment, so current, "
@@ -377,8 +470,8 @@ notes[5] = (
     "theory session and the exam have not happened, so formally I am validated "
     "at zero. I am not going to hide that.")
 
-# ============================================================ 7 · plan vs reality
-s = new("Standard_Dark", 7, dark=True)
+# ============================================================ 9 · plan vs reality
+s = new("Standard_Dark", 9, dark=True)
 head(s, "PLAN VS REALITY", "Not a gap in effort, a gap in structure", None,
      dark=True)
 
@@ -403,7 +496,7 @@ para(tf, "60% integration project", 20, NAVY, bold=True, first=True)
 tb, tf = txbox(s, 6.94, 5.42, 5.6, 0.6, anchor=MSO_ANCHOR.MIDDLE)
 para(tf, "40% breakdowns and support", 20, NAVY, bold=True, first=True)
 
-notes[6] = (
+notes[8] = (
     "This is what explains the previous slide. The plan assumed forty "
     "scheduled hours, classroom first, one level at a time. What happened was "
     "different. We went straight to the floor, we learned what the day "
@@ -413,23 +506,32 @@ notes[6] = (
     "It is not a gap in effort. Every hour I worked was useful. It is a gap in "
     "structure, and structure is the part you can unblock.")
 
-# ============================================================ 8 · integration
-s = new("Standard_Light", 8, dark=False)
+# ============================================================ 10 · integration
+s = new("Standard_Light", 10, dark=False)
 head(s, "THE INTEGRATION PROJECT", "60% of my hours, and none of it on the matrix",
      None, dark=False)
 y = 2.4
 for lbl, val in [("WHAT IT IS",        "[ describe the integration in one line ]"),
                  ("MY ROLE",           "[ what you own day to day ]"),
-                 ("WHAT IT TAUGHT ME", "[ three skills outside the welding matrix ]"),
+                 ("WHAT IT TAUGHT ME", "[ three skills outside the matrix ]"),
                  ("STATUS",            "[ % complete, next milestone ]")]:
-    rect(s, 0.5, y, 12.33, 1.0, fill=TINT)
-    tb, tf = txbox(s, 0.9, y + 0.22, 2.6, 0.56, anchor=MSO_ANCHOR.MIDDLE)
+    rect(s, 0.5, y, 8.0, 1.0, fill=TINT)
+    tb, tf = txbox(s, 0.9, y + 0.22, 2.5, 0.56, anchor=MSO_ANCHOR.MIDDLE)
     para(tf, lbl, 10, BLUE, bold=True, first=True)
-    tb, tf = txbox(s, 3.6, y + 0.22, 8.8, 0.56, anchor=MSO_ANCHOR.MIDDLE)
-    para(tf, val, 16, NAVY, first=True)
+    tb, tf = txbox(s, 3.5, y + 0.22, 4.7, 0.56, anchor=MSO_ANCHOR.MIDDLE)
+    para(tf, val, 14, NAVY, first=True)
     y += 1.14
 
-notes[7] = (
+# imagen generica del template: Diego la cambia por una foto de la integracion
+img(s, "carretera.jpg", 8.8, 2.4, w=4.03)
+rect(s, 8.8, 4.26, 4.03, 2.3, fill=NAVY)
+tb, tf = txbox(s, 9.14, 4.56, 3.35, 1.8)
+para(tf, "WHY IT BELONGS HERE", 9.5, LIME, bold=True, first=True)
+para(tf, "It is real engineering work. It simply does not appear anywhere on "
+         "the ILUO matrix, so the scorecard cannot see it.",
+     12.5, GRAYL, space_before=10, spacing=1.18)
+
+notes[9] = (
     "This is the project that took most of my time, and I worked on it "
     "directly with my engineering lead. Explain it here in your own words: "
     "what the integration is, what you own day to day, what it taught you that "
@@ -438,8 +540,8 @@ notes[7] = (
     "engineering work. It just does not appear anywhere on the ILUO matrix, so "
     "the scorecard you saw two slides ago cannot see it.")
 
-# ============================================================ 9 · gantt
-s = new("Standard_Light", 9, dark=False)
+# ============================================================ 11 · gantt
+s = new("Standard_Light", 11, dark=False)
 head(s, "TIMELINE", "14 weeks left, and Levels U and O are still ahead",
      "August 1, 2026  →  January 1, 2027", dark=False)
 
@@ -483,7 +585,7 @@ for lbl, st in (("Actual", S_DONE), ("Planned", S_NOT)):
     para(tf, lbl, 10.5, MUTED, first=True)
     lx += 1.6
 
-notes[8] = (
+notes[10] = (
     "The same story on a calendar. The green line is today, September twenty "
     "fifth. Everything to its left actually happened: level I content and "
     "level L execution built up in the cell, ANDON orders closed, and the "
@@ -494,8 +596,8 @@ notes[8] = (
     "session and level U needs supervised cell time. Both are calendar items, "
     "not budget items.")
 
-# ============================================================ 10 · results
-s = new("Standard_Dark", 10, dark=True)
+# ============================================================ 12 · results
+s = new("Standard_Dark", 12, dark=True)
 head(s, "RESULTS TO DATE", "From watching the cell to closing the ANDON", None,
      dark=True)
 
@@ -530,7 +632,7 @@ for i, (topic, before, after) in enumerate([
         rect(s, 0.5, y + 0.52, 12.33, 0.008, fill=RULE)
     y += 0.86
 
-notes[9] = (
+notes[11] = (
     "Eight weeks on the floor. Four skills I own unsupervised, twelve in "
     "progress, and sixty percent of the time on the integration project. But "
     "the numbers are not the part I am proud of. The bottom three lines are. "
@@ -539,8 +641,8 @@ notes[9] = (
     "the joint. And two months ago I was the intern who called in the ANDON. "
     "Now I am the one who closes it.")
 
-# ============================================================ 11 · the ask
-s = new("Standard_Light", 11, dark=False)
+# ============================================================ 13 · the ask
+s = new("Standard_Light", 13, dark=False)
 head(s, "WHAT I NEED FROM YOU", "Four commitments, and none of them cost money",
      None, dark=False)
 
@@ -551,8 +653,8 @@ for x, w, lbl in ((1.18, 5.2, "COMMITMENT"), (6.8, 3.6, "WHAT I NEED"),
 
 y = 2.68
 for i, (a, unlock, need, when) in enumerate([
-        ("Level I theory session and written exam", "Validates Level I",
-         "Two half-days on the calendar", "October"),
+        ("Sit the Level I written exam", "Validates Level I",
+         "A date on the calendar", "October"),
         ("Document parameter validations vs. the WPS", "Closes Level L",
          "Access to the parameter sheets", "Oct – Nov"),
         ("Create one welding program in SKS, supervised", "Opens Level U",
@@ -575,7 +677,7 @@ tb, tf = txbox(s, 0.5, 6.78, 12.33, 0.3)
 para(tf, "Approve these four and I finish the program certified, not just "
          "experienced.", 14, NAVY, bold=True, first=True)
 
-notes[10] = (
+notes[12] = (
     "So here is the ask, and it is small. Four things. Give me two half-days "
     "for the level I session and the exam, and the theory stops being "
     "informal. Give me access to the parameter sheets and I will document ten "
@@ -585,8 +687,8 @@ notes[10] = (
     "evidence. Every one of these produces a document you can audit. None of "
     "them needs budget. They need calendar.")
 
-# ============================================================ 12 · conclusions
-s = new("Standard_Dark", 12, dark=True)
+# ============================================================ 14 · conclusions
+s = new("Standard_Dark", 14, dark=True)
 head(s, "CONCLUSIONS", "Informally capable now, certified by January", None,
      dark=True)
 y = 2.26
@@ -605,7 +707,7 @@ tb, tf = txbox(s, 0.5, 6.46, 12.33, 0.34)
 para(tf, "Trust first, then the torch. That is how I read WIN.", 17, LIME,
      bold=True, italic=True, first=True)
 
-notes[11] = (
+notes[13] = (
     "Three conclusions. First, I am genuinely capable at level L, and I am "
     "being honest that level I is not validated. Second, learning on the floor "
     "made me faster at diagnosing problems than a classroom would have. It "
@@ -614,9 +716,9 @@ notes[11] = (
     "start: trust first, then the torch. That is what these two months taught "
     "me.")
 
-# ============================================================ 13 · closing
+# ============================================================ 15 · closing
 # the Closing layout carries a large centred logo at y 3.39-4.10, keep it clear
-s = new("Closing Slide", 13, dark=True, footer=False)
+s = new("Closing Slide", 15, dark=True, footer=False)
 tb, tf = txbox(s, 0.0, 1.72, SW, 0.8, align=PP_ALIGN.CENTER)
 para(tf, "Thank you", 44, WHITE, bold=True, first=True)
 tb, tf = txbox(s, 0.0, 2.62, SW, 0.34, align=PP_ALIGN.CENTER)
@@ -627,7 +729,7 @@ para(tf, "Diego Adair de León Márquez", 15, WHITE, first=True,
 para(tf, "Robotic Welding  ·  Engineering  ·  Tenneco Aguascalientes",
      11.5, GRAYL, space_before=6, align=PP_ALIGN.CENTER)
 
-notes[12] = (
+notes[14] = (
     "Thank you. I am happy to take questions, and if anyone wants the detail "
     "behind any of the twenty three skills, I can walk through it.")
 
