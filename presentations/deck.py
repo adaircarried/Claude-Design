@@ -167,6 +167,7 @@ notes = {}
 
 # ============================================================ 1 · title
 
+
 s1 = prs.slides[0]
 ph = {p.placeholder_format.idx: p for p in s1.placeholders}
 
@@ -211,6 +212,7 @@ notes[0] = (
 
 # ============================================================ 2 · WIN
 
+
 # Deliberately almost empty: one word, one definition, one line of his own.
 s = new("Standard_Dark", 2, dark=True)
 head(s, "OUR VALUES", None, None, dark=True)
@@ -239,6 +241,7 @@ notes[1] = (
     "here is not about being right. It is about the line running.")
 
 # ============================================================ 3 · summary
+
 
 # Bottom line up front: if the room only hears three minutes, it hears this.
 s = new("Standard_Light", 3, dark=False)
@@ -277,6 +280,7 @@ notes[2] = (
 
 # ============================================================ 4 · context
 
+
 s = new("Standard_Light", 4, dark=False)
 head(s, "WHERE I WORK", "Few welding cells, and they run stable", None,
      dark=False)
@@ -310,6 +314,7 @@ notes[3] = (
     "looks the way it does on the next slides.")
 
 # ============================================================ 5 · ILUO path
+
 
 s = new("Standard_Light", 5, dark=False)
 head(s, "THE ILUO SKILL PATH", "Four levels, and half the hours are for teaching",
@@ -347,6 +352,7 @@ notes[4] = (
 
 # ============================================================ 6 · nivel I
 
+
 # El supervisor pidio enfocar el nivel I. Estas dos laminas son ese enfoque.
 s = new("Standard_Light", 6, dark=False)
 head(s, "LEVEL I IN DETAIL", "Nine topics, one exam, one passing mark",
@@ -380,55 +386,215 @@ notes[5] = (
     "sit above it, and none of them open until this exam is passed. Level I "
     "is the gate.")
 
-# ============================================================ 7 · aprendido A
+# ============================================================ 7 · seguridad
 s = new("Standard_Light", 7, dark=False)
-head(s, "WHAT I LEARNED, PART 1", "Reading the weld before touching it",
-     "From the inspector manual: how a weld is judged", dark=False)
+head(s, "TOPIC 1 OF 9", "Protecting myself, and the person next to me",
+     "Welding safety, per ANSI Z49.1", dark=False)
 
-APREND = [("WELDING SYMBOLS",
-           "The eight elements of the symbol. Arrow side below the reference "
-           "line, other side above."),
-          ("JOINT GEOMETRY",
-           "Butt, lap, T, corner and edge. Root, toe, throat, leg and "
-           "reinforcement."),
-          ("POSITIONS",
-           "1G to 4G for groove welds. 1F to 4F for fillet welds."),
-          ("DISCONTINUITIES",
-           "Porosity, undercut, lack of fusion, overlap and cracks.")]
-for i, (lbl, cuerpo) in enumerate(APREND):
+SEG = [("RADIATION", "Screens, helmet and welder's clothing. Arc flash does "
+        "not spare the person who is only watching."),
+       ("FUMES AND GAS", "The biggest factor under my own control is where I "
+        "put my head relative to the fume column."),
+       ("COMPRESSED GAS", "Cylinders upright and secured, always. Cap on "
+        "before moving one."),
+       ("THE ROBOTIC CELL", "Emergency stops, interlocks, teach mode at "
+        "reduced speed, and lockout before anyone goes in.")]
+for i, (lbl, cuerpo) in enumerate(SEG):
     x = 0.5 + i * CSTEP
-    rect(s, x, 2.3, CW, 2.5, fill=TINT)
-    tb, tf = txbox(s, x + 0.3, 2.62, CW - 0.6, 1.9)
+    rect(s, x, 2.3, CW, 2.7, fill=TINT)
+    tb, tf = txbox(s, x + 0.3, 2.62, CW - 0.6, 2.1)
+    para(tf, lbl, 9.5, BLUE, bold=True, first=True)
+    para(tf, cuerpo, 13.5, NAVY, space_before=12, spacing=1.2)
+
+rect(s, 0.5, 5.32, 12.33, 1.1, fill=NAVY)
+tb, tf = txbox(s, 0.92, 5.56, 11.5, 0.62, anchor=MSO_ANCHOR.MIDDLE)
+para(tf, "The cell safety column is the one neither of my two study documents "
+         "covers.", 16, LIME, bold=True, first=True)
+
+notes[6] = (
+    "Safety, per ANSI Z49.1. The arc flash does not care whether you are "
+    "welding or watching, which is why the screens matter as much as the "
+    "helmet. On fumes, the biggest factor I actually control is where I put "
+    "my head relative to the column. And the fourth card is the cell itself, "
+    "which neither of my two documents covers, so I had to build it myself.")
+# ============================================================ 8 · equipo MIG
+s = new("Standard_Light", 8, dark=False)
+head(s, "TOPICS 2 AND 4 OF 9", "Five blocks, and the four that wear out",
+     "GMAW equipment and process variables", dark=False)
+
+rect(s, 0.5, 2.28, 6.02, 3.0, fill=TINT)
+tb, tf = txbox(s, 0.86, 2.58, 5.3, 2.4)
+para(tf, "THE EQUIPMENT", 9.5, BLUE, bold=True, first=True)
+for it in ("Power source, constant voltage, DCEP",
+           "Wire feeder and drive rolls", "Torch", "Gas supply and flowmeter",
+           "Work lead"):
+    para(tf, it, 13.5, NAVY, space_before=13)
+
+rect(s, 6.81, 2.28, 6.02, 3.0, fill=NAVY)
+tb, tf = txbox(s, 7.17, 2.58, 5.3, 2.4)
+para(tf, "WHAT I CHANGE MYSELF", 9.5, LIME, bold=True, first=True)
+for it in ("Contact tip", "Nozzle", "Diffuser", "Liner", "Drive rolls"):
+    para(tf, it, 13.5, WHITE, space_before=13)
+
+rect(s, 0.5, 5.6, 12.33, 1.16, fill=LIME)
+tb, tf = txbox(s, 0.92, 5.86, 11.5, 0.66, anchor=MSO_ANCHOR.MIDDLE)
+para(tf, "There is no amperage knob. I set wire feed speed and voltage, and "
+         "the current follows.", 18, NAVY, bold=True, first=True)
+
+notes[7] = (
+    "Equipment and variables together, because on the floor they are one "
+    "conversation. Five blocks; four of them wear out and I change them "
+    "myself, which is the level L skill I already own. The bottom line took "
+    "me longest to understand. There is no amperage knob on a MIG feeder. "
+    "The source holds the voltage, I set wire feed speed, and the current "
+    "comes out of that. Once that clicked, adjusting a cell stopped being "
+    "guesswork.")
+# ============================================================ 9 · TIG
+s = new("Standard_Dark", 9, dark=True)
+head(s, "THE OTHER MANUAL PROCESS", "TIG, where nothing about MIG applies",
+     "The plant runs two manual processes, and they share almost no parts",
+     dark=True)
+
+TIGC = [("NON-CONSUMABLE ELECTRODE",
+         "Tungsten only holds the arc. Filler goes in by hand, as a rod."),
+        ("100 % ARGON", "Any CO₂ would consume the tungsten. 15 to 25 CFH, "
+         "read on the flowmeter and nowhere else."),
+        ("ITS OWN CONSUMABLES",
+         "Collet, collet body, cup and back cap. None of the MIG set fits.")]
+for i, (lbl, cuerpo) in enumerate(TIGC):
+    x = 0.5 + i * SS3
+    rect(s, x, 2.28, SW3, 2.6, fill=CARD)
+    tb, tf = txbox(s, x + 0.36, 2.6, SW3 - 0.72, 2.0)
+    para(tf, lbl, 9.5, LIME, bold=True, first=True)
+    para(tf, cuerpo, 13.5, GRAYL, space_before=12, spacing=1.2)
+
+rect(s, 0.5, 5.2, 12.33, 1.16, fill=CARD)
+tb, tf = txbox(s, 0.92, 5.44, 11.5, 0.7, anchor=MSO_ANCHOR.MIDDLE)
+para(tf, "A tungsten that touches the pool is cut back and reground, never "
+         "cleaned.", 17, WHITE, bold=True, first=True)
+
+notes[8] = (
+    "The plant runs two manual processes, and almost nothing carries over "
+    "from MIG to TIG. The tungsten does not melt, it only holds the arc. The "
+    "gas is pure argon, because any carbon dioxide would eat the tungsten, "
+    "and the flow is read on the flowmeter, never on the tank gauge. The "
+    "consumables are a different set entirely. And a contaminated tungsten is "
+    "cut back and reground, not cleaned.")
+# ============================================================ 10 · transferencia
+s = new("Standard_Light", 10, dark=False)
+head(s, "TOPIC 3 OF 9", "How the metal crosses the arc",
+     "Four transfer modes, and what picks between them", dark=False)
+
+MODOS = [("SHORT CIRCUIT", "Low current", "The wire touches the work. Lowest "
+          "heat, for thin sheet. Its risk is lack of fusion."),
+         ("GLOBULAR", "Mid current", "Large drops fall by gravity. Heavy "
+          "spatter, so we avoid it."),
+         ("SPRAY", "High current", "Fine droplets, no contact. Needs at least "
+          "80 % argon. Flat and horizontal only."),
+         ("PULSED", "Controlled", "The source alternates high and low. Spray "
+          "quality at low heat input.")]
+for i, (lbl, cur, cuerpo) in enumerate(MODOS):
+    x = 0.5 + i * CSTEP
+    rect(s, x, 2.3, CW, 2.84, fill=TINT)
+    tb, tf = txbox(s, x + 0.3, 2.6, CW - 0.6, 2.3)
+    para(tf, lbl, 9.5, BLUE, bold=True, first=True)
+    para(tf, cur, 15, NAVY, bold=True, space_before=8)
+    para(tf, cuerpo, 12.5, MUTED, space_before=10, spacing=1.2)
+
+rect(s, 0.5, 5.46, 12.33, 1.1, fill=NAVY)
+tb, tf = txbox(s, 0.92, 5.7, 11.5, 0.62, anchor=MSO_ANCHOR.MIDDLE)
+para(tf, "Changing the transfer mode is an essential variable. It invalidates "
+         "the procedure.", 16, LIME, bold=True, first=True)
+
+notes[9] = (
+    "How the metal crosses the arc. Four modes, and the thing to hold on to "
+    "is that short circuit is the low-heat one for thin sheet, and spray is "
+    "the high-current one that needs at least eighty percent argon. The "
+    "bottom line is the commercial part: changing the mode is an essential "
+    "variable, so it invalidates the procedure.")
+# ============================================================ 11 · plano
+s = new("Standard_Light", 11, dark=False)
+head(s, "TOPICS 6, 7 AND 8 OF 9", "Reading the print: joint, position, symbol",
+     "Three short topics that always travel together", dark=False)
+
+PLANO = [("JOINT GEOMETRY",
+          "Butt, lap, T, corner and edge. The throat is what carries the "
+          "load, not the leg."),
+         ("POSITIONS",
+          "1G to 4G for groove welds, 1F to 4F for fillet welds. Cummins adds "
+          "P for plug and S for slot."),
+         ("SYMBOLS",
+          "AWS A2.4 by default. Arrow side goes below the reference line, the "
+          "other side above.")]
+for i, (lbl, cuerpo) in enumerate(PLANO):
+    x = 0.5 + i * SS3
+    rect(s, x, 2.3, SW3, 2.5, fill=TINT)
+    tb, tf = txbox(s, x + 0.36, 2.62, SW3 - 0.72, 1.9)
     para(tf, lbl, 9.5, BLUE, bold=True, first=True)
     para(tf, cuerpo, 14, NAVY, space_before=12, spacing=1.2)
 
 rect(s, 0.5, 5.12, 12.33, 1.3, fill=NAVY)
-tb, tf = txbox(s, 0.92, 5.42, 11.5, 0.7, anchor=MSO_ANCHOR.MIDDLE)
-para(tf, "A discontinuity only becomes a defect when it exceeds the "
-         "acceptance limit.", 19, LIME, bold=True, first=True)
+tb, tf = txbox(s, 0.92, 5.4, 11.5, 0.8, anchor=MSO_ANCHOR.MIDDLE)
+para(tf, "Our prints carry two things AWS does not: the weld class and the "
+         "WDR, both in the tail of the symbol.", 16, LIME, bold=True,
+     first=True, spacing=1.16)
+para(tf, "If no class is marked, it is Class 2 by default.", 12.5, GRAYL,
+     space_before=8)
 
-notes[6] = (
-    "My supervisor asked me to show what I actually learned, so these next two "
-    "slides are that. The first half came from the inspector manual, and it is "
-    "all about reading a weld before you touch it. The symbol on the print and "
-    "its eight elements, and the one people get backwards: arrow side goes "
-    "below the reference line, the other side above. The geometry of the joint "
-    "and the name of every part of the bead. The positions. And the catalogue "
-    "of discontinuities. But the sentence at the bottom is the one that "
-    "actually changed how I work. A discontinuity is just an imperfection. It "
-    "only becomes a defect when it goes past the acceptance limit. So the same "
-    "bead can pass or fail depending on what the print asks for.")
+notes[10] = (
+    "Three short topics that travel together, because you meet all three on "
+    "the same print. The throat carries the load, not the leg. Positions one "
+    "through four, G for groove and F for fillet. And on the symbol, the rule "
+    "people get backwards: arrow side goes below the reference line. What is "
+    "ours is the bottom line: our prints carry the weld class and the WDR in "
+    "the tail, and with no class marked it is class two by default.")
+# ============================================================ 12 · discontinuidades
+s = new("Standard_Dark", 12, dark=True)
+head(s, "TOPICS 5 AND 9 OF 9",
+     "A defect is a discontinuity that went too far",
+     "Discontinuities, acceptance limits and the documents that set them",
+     dark=True)
 
-# ============================================================ 8 · aprendido B
-s = new("Standard_Dark", 8, dark=True)
-head(s, "WHAT I LEARNED, PART 2",
+rect(s, 0.5, 2.28, 6.02, 2.9, fill=CARD)
+tb, tf = txbox(s, 0.86, 2.56, 5.3, 2.3)
+para(tf, "WHAT WE SEE IN THE CELL", 9.5, LIME, bold=True, first=True)
+for it in ("Porosity, from poor gas coverage",
+           "Undercut, from too much current or speed",
+           "Lack of fusion, from too little heat",
+           "Spatter, burn-through, cracks"):
+    para(tf, it, 13.5, WHITE, space_before=13)
+
+rect(s, 6.81, 2.28, 6.02, 2.9, fill=CARD)
+tb, tf = txbox(s, 7.17, 2.56, 5.3, 2.3)
+para(tf, "WHAT SETS THE LIMIT", 9.5, LIME, bold=True, first=True)
+for it in ("The weld class on the print, 1, 2 or 3",
+           "Class 1 allows no undercut at all",
+           "Cracks are never allowed, in any class",
+           "The WPS is the control plan"):
+    para(tf, it, 13.5, WHITE, space_before=13)
+
+rect(s, 0.5, 5.5, 12.33, 1.1, fill=LIME)
+tb, tf = txbox(s, 0.92, 5.74, 11.5, 0.62, anchor=MSO_ANCHOR.MIDDLE)
+para(tf, "The same bead passes in Class 3 and fails in Class 1.", 18, NAVY,
+     bold=True, first=True)
+
+notes[11] = (
+    "These two topics are meaningless apart. On the left, what we see in the "
+    "cell and what causes it. On the right, what decides whether it is "
+    "acceptable, and it is not my opinion: it is the weld class on the print. "
+    "Class one allows no undercut at all, and cracks are never allowed in any "
+    "class. The whole idea is the bottom line: the same bead passes in class "
+    "three and fails in class one.")
+# ============================================================ 13 · numeros
+s = new("Standard_Dark", 13, dark=True)
+head(s, "WHAT THE CUSTOMER ADDS",
      "The customer turns that theory into numbers",
      "From the Cummins standard for aftertreatment and exhaust parts",
      dark=True)
 
 CIFRAS = [("± 5 %", "wire feed speed, current and voltage"),
           ("± 10 %", "travel speed"),
-          ("10 – 16 mm", "contact tip to work distance, on every GMAW weld")]
+          ("10 – 16 mm", "contact tip to work distance, every GMAW weld")]
 for i, (big, lbl) in enumerate(CIFRAS):
     x = 0.5 + i * SS3
     rect(s, x, 2.26, SW3, 2.34, fill=CARD)
@@ -444,20 +610,18 @@ para(tf, "Outside the band, the procedure has to be revalidated.", 20, NAVY,
 tb, tf = txbox(s, 0.5, 6.44, 12.33, 0.3)
 para(tf, "Source: CES-S-MANF-150, sections 9 and 13.", 11, MUTEDD, first=True)
 
-notes[7] = (
-    "The second half came from the customer standard, and this is the part "
-    "that surprised me. Our training matrix says adjust the essential "
-    "variables. It does not say by how much. The Cummins standard does. Wire "
-    "feed speed, current and voltage within five percent. Travel speed within "
-    "ten. Contact tip to work distance between ten and sixteen millimetres on "
-    "every single GMAW weld, no matter the transfer mode. Go outside those "
-    "bands and the procedure has to be revalidated. That is the difference "
-    "between adjusting a machine and running a qualified process, and it is "
-    "the single most useful thing I learned in these two months.")
+notes[12] = (
+    "And this is what the customer standard adds on top of all of it. Our "
+    "matrix says adjust the essential variables. It does not say by how much. "
+    "Cummins does. Wire feed speed, current and voltage within five percent. "
+    "Travel speed within ten. Contact tip to work distance between ten and "
+    "sixteen millimetres on every GMAW weld, no matter the transfer mode. Go "
+    "outside those bands and the procedure has to be revalidated. That is the "
+    "difference between adjusting a machine and running a qualified process.")
+# ============================================================ 14 · preparacion
 
-# ============================================================ 9 · preparacion
 
-s = new("Standard_Dark", 9, dark=True)
+s = new("Standard_Dark", 14, dark=True)
 head(s, "HOW I AM PREPARING",
      "616 pages, and five gaps neither of them closes", None, dark=True)
 
@@ -488,7 +652,7 @@ tb, tf = txbox(s, 0.5, 6.62, 12.33, 0.34)
 para(tf, "I mapped both documents page by page. The gaps are mine to close, "
          "and I know exactly what they are.", 15, LIME, bold=True, first=True)
 
-notes[8] = (
+notes[13] = (
     "I did not just receive the material, I audited it. Six hundred and "
     "sixteen pages between the two. The COMIMSA manual is a welding inspector "
     "course, so it is excellent at what you look at and measure: symbols, "
@@ -501,9 +665,10 @@ notes[8] = (
     "both, including robotic cell safety, which neither document mentions "
     "once. Those five are mine to close, and I already know what they are.")
 
-# ============================================================ 10 · scorecard
+# ============================================================ 15 · scorecard
 
-s = new("Standard_Light", 10, dark=False)
+
+s = new("Standard_Light", 15, dark=False)
 head(s, "WHERE I STAND TODAY",
      "Four skills unsupervised, none of them validated", None, dark=False)
 
@@ -545,7 +710,7 @@ para(tf, "I learned Level I in the cell, not in a classroom. The exam has not "
          "happened, so nothing is validated yet.", 15, WHITE, first=True,
      spacing=1.16)
 
-notes[9] = (
+notes[14] = (
     "Each square is one skill. Four of the twenty three I execute with nobody "
     "standing next to me: consumable changes, which means contact tip, liner, "
     "nozzle, diffuser and rollers; essential variable adjustment, so current, "
@@ -556,8 +721,9 @@ notes[9] = (
     "theory session and the exam have not happened, so formally I am validated "
     "at zero. I am not going to hide that.")
 
-# ============================================================ 11 · lo que sigue
-s = new("Standard_Light", 11, dark=False)
+# ============================================================ 16 · lo que sigue
+
+s = new("Standard_Light", 16, dark=False)
 head(s, "WHAT COMES NEXT", "Three levels ahead, and what each one asks",
      None, dark=False)
 
@@ -585,7 +751,7 @@ tb, tf = txbox(s, 0.92, 6.06, 11.5, 0.62, anchor=MSO_ANCHOR.MIDDLE)
 para(tf, "Twenty of the forty hours live in these three levels, and none of "
          "them open until Level I is signed.", 16, NAVY, bold=True, first=True)
 
-notes[10] = (
+notes[15] = (
     "And this is where I am going. Level L is execution: validating parameters "
     "against the WPS and adjusting the essential variables without anyone "
     "standing next to me, closed by a validation on the floor. Level U is "
@@ -596,9 +762,10 @@ notes[10] = (
     "in these three. And the line at the bottom is why level I matters so "
     "much: none of them open until it is signed.")
 
-# ============================================================ 12 · integration
+# ============================================================ 17 · integration
 
-s = new("Standard_Light", 12, dark=False)
+
+s = new("Standard_Light", 17, dark=False)
 head(s, "THE INTEGRATION PROJECT", "60% of my hours, and none of it on the matrix",
      None, dark=False)
 y = 2.4
@@ -622,7 +789,7 @@ para(tf, "It is real engineering work. It simply does not appear anywhere on "
          "the ILUO matrix, so the scorecard cannot see it.",
      12.5, GRAYL, space_before=10, spacing=1.18)
 
-notes[11] = (
+notes[16] = (
     "This is the project that took most of my time, and I worked on it "
     "directly with my engineering lead. Explain it here in your own words: "
     "what the integration is, what you own day to day, what it taught you that "
@@ -631,9 +798,10 @@ notes[11] = (
     "engineering work. It just does not appear anywhere on the ILUO matrix, so "
     "the scorecard you saw two slides ago cannot see it.")
 
-# ============================================================ 13 · gantt
+# ============================================================ 18 · gantt
 
-s = new("Standard_Light", 13, dark=False)
+
+s = new("Standard_Light", 18, dark=False)
 head(s, "TIMELINE", "14 weeks left, and Levels U and O are still ahead",
      "August 1, 2026  →  January 1, 2027", dark=False)
 
@@ -677,7 +845,7 @@ for lbl, st in (("Actual", S_DONE), ("Planned", S_NOT)):
     para(tf, lbl, 10.5, MUTED, first=True)
     lx += 1.6
 
-notes[12] = (
+notes[17] = (
     "The same story on a calendar. The green line is today, September twenty "
     "fifth. Everything to its left actually happened: level I content and "
     "level L execution built up in the cell, ANDON orders closed, and the "
@@ -688,9 +856,10 @@ notes[12] = (
     "session and level U needs supervised cell time. Both are calendar items, "
     "not budget items.")
 
-# ============================================================ 14 · the ask
+# ============================================================ 19 · the ask
 
-s = new("Standard_Light", 14, dark=False)
+
+s = new("Standard_Light", 19, dark=False)
 head(s, "WHAT I NEED FROM YOU", "Four commitments, and none of them cost money",
      None, dark=False)
 
@@ -725,7 +894,7 @@ tb, tf = txbox(s, 0.5, 6.78, 12.33, 0.3)
 para(tf, "Approve these four and I finish the program certified, not just "
          "experienced.", 14, NAVY, bold=True, first=True)
 
-notes[13] = (
+notes[18] = (
     "So here is the ask, and it is small. Four things. Give me two half-days "
     "for the level I session and the exam, and the theory stops being "
     "informal. Give me access to the parameter sheets and I will document ten "
@@ -735,9 +904,10 @@ notes[13] = (
     "evidence. Every one of these produces a document you can audit. None of "
     "them needs budget. They need calendar.")
 
-# ============================================================ 15 · conclusions
+# ============================================================ 20 · conclusions
 
-s = new("Standard_Dark", 15, dark=True)
+
+s = new("Standard_Dark", 20, dark=True)
 head(s, "CONCLUSIONS", "Informally capable now, certified by January", None,
      dark=True)
 y = 2.1
@@ -757,7 +927,7 @@ tb, tf = txbox(s, 0.5, 6.46, 12.33, 0.34)
 para(tf, "Trust first, then the torch. That is how I read WIN.", 17, LIME,
      bold=True, italic=True, first=True)
 
-notes[14] = (
+notes[19] = (
     "Three conclusions. First, I am genuinely capable at level L, and I am "
     "being honest that level I is not validated. Second, learning on the floor "
     "made me faster at diagnosing problems than a classroom would have. It "
@@ -766,10 +936,11 @@ notes[14] = (
     "start: trust first, then the torch. That is what these two months taught "
     "me.")
 
-# ============================================================ 16 · closing
+# ============================================================ 21 · closing
+
 
 # the Closing layout carries a large centred logo at y 3.39-4.10, keep it clear
-s = new("Closing Slide", 16, dark=True, footer=False)
+s = new("Closing Slide", 21, dark=True, footer=False)
 tb, tf = txbox(s, 0.0, 1.72, SW, 0.8, align=PP_ALIGN.CENTER)
 para(tf, "Thank you", 44, WHITE, bold=True, first=True)
 tb, tf = txbox(s, 0.0, 2.62, SW, 0.34, align=PP_ALIGN.CENTER)
@@ -780,7 +951,7 @@ para(tf, "Diego Adair de León Márquez", 15, WHITE, first=True,
 para(tf, "Robotic Welding  ·  Engineering  ·  Tenneco Aguascalientes",
      11.5, GRAYL, space_before=6, align=PP_ALIGN.CENTER)
 
-notes[15] = (
+notes[20] = (
     "Thank you. I am happy to take questions, and if anyone wants the detail "
     "behind any of the twenty three skills, I can walk through it.")
 

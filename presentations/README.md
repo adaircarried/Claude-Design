@@ -10,7 +10,7 @@ ILUO skill path.
 | Plant tutor | Fernando Robledo |
 | Audience | Plant manager · HR · Engineering manager |
 | Date | 25 September 2026 |
-| Length | 16 slides · ~15 min · English |
+| Length | 21 slides · ~13.5 min spoken · English |
 
 ## Files
 
@@ -42,13 +42,21 @@ Slides are deliberately sparse. Roughly 1,400 words of narration live in the
 speaker notes, not on the slides, which is about eleven minutes spoken and
 leaves room for questions.
 
-Slides 6 to 11 are the Level I focus the plant supervisor asked for. Six lays
-out the nine topics and their single exam. Seven and eight are what was
-actually learned, split the way the two source documents split: the inspector
-manual teaches how a weld is read, the customer standard puts numbers on it.
-Nine audits both documents and names the five gaps neither closes. Ten is the
-honest scorecard, and eleven turns Levels L, U and O into the objectives that
-come next rather than work already under way.
+Slide 6 opens the Level I block by listing its nine topics, and slides 7 to 13
+walk them: one slide where a topic is big enough to earn it (safety, GMAW
+equipment, TIG, transfer modes), two or three topics to a slide where they are
+short and travel together (joint, position and symbol; discontinuities and
+control documents). TIG is in there because the plant's own written evaluation
+devotes eight of its twenty five questions to it, even though the ILUO matrix
+names only GMAW.
+
+Slide 14 audits both source documents and names the five gaps neither closes.
+Fifteen is the honest scorecard, and sixteen turns Levels L, U and O into the
+objectives that come next rather than work already under way.
+
+If the slot runs short, slides 4 (*Where I work*) and 10 (*How the metal
+crosses the arc*) are the two that can be deleted without breaking the
+argument.
 
 ## Transitions
 
@@ -68,13 +76,13 @@ placeholders for real photographs:
 | Slide | Image | Replace with |
 |---|---|---|
 | 4, Where I work | `producto.jpg` | A photograph of the welding cell |
-| 12, The integration project | `carretera.jpg` | A photograph of the integration |
+| 17, The integration project | `carretera.jpg` | A photograph of the integration |
 
 `valores_tenneco.png` on slide 2 is the official Core Values poster and stays
 as it is.
 
 ## Still to fill in
 
-Slide 12 (*The integration project*) carries four bracketed placeholders: what
+Slide 17 (*The integration project*) carries four bracketed placeholders: what
 the integration is, the role, what it taught, and its status. Everything else
 is final.
