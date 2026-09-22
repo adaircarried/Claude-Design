@@ -6,8 +6,15 @@ Certificación, COMIMSA, 2017. 440 páginas, español, 10 capítulos.
 
 **Método:** extracción del texto de los cinco bloques PDF, reconstrucción de la
 estructura por el pie de página de cada lámina, y verificación visual de las
-secciones sin capa de texto (82 de 440 páginas son sólo imagen, y ahí es donde
-una búsqueda por palabras se equivoca).
+páginas sin capa de texto. En los cinco capítulos que tocan el nivel I hay
+**97 páginas cuyo contenido es sólo imagen**, y ahí es donde una búsqueda por
+palabras se equivoca.
+
+**Segunda pasada.** La primera versión de esta auditoría daba por ausente el
+tema 4 y subestimaba el 2. Dos causas: el manual usa vocabulario de inspector
+(dice *entrada de calor*, no *aporte de calor*, que es lo que yo buscaba) y sus
+figuras más importantes están en páginas sin texto. Corregido abajo; las
+correcciones van marcadas.
 
 ---
 
@@ -26,8 +33,8 @@ una búsqueda por palabras se equivoca).
 | 9 | 360 – 398 | Discontinuidades | **Sí** |
 | 10 | 399 – 440 | Ensayos no destructivos | No |
 
-Unas 189 de las 440 páginas aplican directamente al nivel I, el 43 %. El 57 %
-restante es contenido de inspector que no aparece en la matriz.
+Unas 205 de las 440 páginas aplican directamente al nivel I, el 47 %. El resto
+es contenido de inspector que no aparece en la matriz.
 
 ---
 
@@ -54,22 +61,41 @@ Capítulo 2 completo, 28 páginas, basado en ANSI Z49.1.
 interlocks, vallas, modo teach contra automático, velocidad reducida ni LOTO.
 Es un manual de inspector, no de operador de celda.
 
-### 2. Equipo GMAW — parcial
+### 2. Equipo GMAW — parcial, con más contenido del que parecía
 
-Páginas 61 a 67, siete páginas.
+Páginas 61 a 67. Tres de esas siete páginas son figuras sin texto, y son las
+que más valen.
 
-Tiene: definición del proceso, gases de protección (argón, helio, CO2, O2 y
-mezclas), figura 3.15 de nomenclatura de la pistola en p64 (gas nozzle, contact
-tube, contact tube setback, electrode extension, stickout, standoff distance),
-sistema de identificación del electrodo (p65), ventajas y desventajas (p66),
-discontinuidades típicas del proceso (p67).
+| Contenido | Página |
+|---|---|
+| Definición del proceso, gases (argón, helio, CO2, O2 y mezclas) | 61 |
+| **Figura 10.8, diagrama completo del equipo GMAW** | **62** |
+| Tabla de modos de transferencia y figura 3.14 | 63 |
+| Figura 3.15, nomenclatura de la pistola | 64 |
+| **Figura 3.11, sistema de clasificación del electrodo** | **65** |
+| Ventajas y desventajas | 66 |
+| Discontinuidades típicas del proceso | 67 |
 
-**Huecos:** fuente de voltaje constante y curva V-A; alimentador y rodillos;
-liner y difusor; flujómetro y regulador aplicados a GMAW; polaridad DCEP para
-GMAW (el manual sólo trata DCEP y DCEN en SMAW, p56, y GTAW, p77);
-clasificación AWS del alambre (ER70S-x no aparece en ninguna página);
-periféricos de celda robótica (TCP, reamer, corte de alambre, detección de
-colisión).
+**Corrección.** La figura 10.8 de la p62 numera diez componentes del equipo:
+work lead, water to gun, water from gun, gun switch circuit, shielding gas to
+gun, cable assembly, shielding gas from cylinder, welding contactor control,
+power cable y primary input power, más power source, electrode feed unit,
+welding gun, shielding gas supply y shielding gas regulator. El alimentador y
+el regulador sí están; lo que no está es el detalle de rodillos, liner y
+difusor.
+
+**Corrección.** La figura 3.11 de la p65 enseña la clasificación **ER XXS-X**:
+ER para electrode rod, XX para resistencia, S para solid wire y -X para
+composición química. O sea que ER70S-6 sí se puede decodificar con el manual,
+aunque la cadena "ER70S" no aparezca escrita en ninguna página.
+
+La p64 da la nomenclatura de la pistola: gas nozzle, contact tube, contact tube
+setback, electrode extension, stickout y standoff distance.
+
+**Huecos que siguen:** curva V-A de la fuente de voltaje constante; rodillos,
+liner y difusor; polaridad DCEP aplicada a GMAW (el manual sólo trata DCEP y
+DCEN en SMAW, p56, y GTAW, p77); periféricos de celda robótica (TCP, reamer,
+corte de alambre, detección de colisión).
 
 ### 3. Mecanismos de transferencia de metal — parcial, y con un error
 
@@ -84,22 +110,68 @@ es el cortocircuito. Verificado sobre la imagen de la página, no sobre el texto
 extraído. Si el examen se arma con esta tabla, la respuesta correcta y la
 respuesta del manual no coinciden.
 
+**Añadido en la segunda pasada.** La p243 trae la tabla D1.1 de junta
+precalificada, y su Nota A dice: *"Not prequalified for gas metal arc welding
+using short circuiting transfer nor GTAW."* Es decir, la transferencia por
+cortocircuito **no está precalificada** en el código estructural. Es la única
+consecuencia de código que el manual liga a un modo de transferencia, y es un
+ejemplo excelente para el examen.
+
 **Huecos:** corriente de transición, relación con el diámetro del alambre,
 criterio de selección por espesor y posición.
 
-### 4. Variables del proceso — ausente
+### 4. Variables del proceso — parcial
 
-El hueco más grande. Búsquedas sin ningún resultado en las 440 páginas:
-*aporte de calor*, *heat input*, *amperaje*, *extensión del electrodo*, *ángulo
-de trabajo*, *ángulo de desplazamiento*, *flujo de gas*, *voltaje de arco*,
-*inductancia*.
+**Corrección respecto a la primera versión, que lo daba por ausente.** El
+contenido existe, repartido en tres sitios distintos y bajo vocabulario de
+inspector.
 
-Sólo aparecen: *stickout* una vez (p71, referido a FCAW autoprotegido) y
-*velocidad de avance* o *de desplazamiento* en p343, p386 y p389, siempre como
-causa de una discontinuidad, nunca como variable que se ajusta.
+**a) La fórmula de entrada de calor, p343.** El manual la escribe así:
 
-No hay capítulo de variables porque un inspector juzga el resultado, no ajusta
-el parámetro.
+> Entrada de calor, Joules/in = (Corriente de soldadura × Voltaje de soldadura
+> × 60) / velocidad de desplazamiento, in/min
+
+Y añade la relación: mientras la entrada de calor aumenta, la velocidad de
+enfriamiento disminuye. Es decir, las tres variables operativas del nivel L
+(corriente, voltaje y velocidad de desplazamiento) sí están, dentro del
+capítulo de metalurgia. La misma idea reaparece en la p94 aplicada a PAW.
+Velocidad de enfriamiento también en p335, p338, p340 y p349. Precalentado en
+p343, figura 8.15.
+
+**b) Efecto de las variables sobre el defecto, capítulo 9.** El manual no
+enseña a ajustar, pero sí enseña qué pasa cuando el ajuste está mal:
+
+| Efecto | Causa que da el manual | Página |
+|---|---|---|
+| Socavación | Calor excesivo, corriente excesiva, velocidad de desplazamiento excesiva | 386 |
+| Convexidad en filete | Velocidad de avance demasiado lenta | 389 |
+| Fusión incompleta | Insuficiente aplicación de calor | 373 |
+| Discontinuidades en LBW y EBW | Velocidades de desplazamiento altas | 398 |
+
+**c) Variables esenciales en el sentido del código.** p139, p244, p245, p251,
+p252 y p253. La p251 es la más útil: los nueve pasos de la calificación de un
+procedimiento, que abren con *"Seleccionar las variables de soldadura"* y siguen
+con *"monitorear... registrando todas las variables importantes y
+observaciones"*. La p252 enumera las variables esenciales de la calificación
+del soldador: posición, configuración de la junta, tipo y tamaño de electrodo,
+proceso, tipo y espesor del metal base y técnica específica.
+
+**d) Variables de la junta, p243.** La tabla D1.1 de junta precalificada fija,
+para GMAW y FCAW, la abertura de raíz (R), el ángulo de ranura (α), las
+posiciones permitidas y, sobre todo, las **tolerancias "as detailed" contra "as
+fit-up"** (R = +1/16, −0 contra +1/4, −1/16; α = +10°, −0 contra +10°, −5°).
+Esto es lo más parecido que hay en el manual a lo que tú haces al validar una
+hoja de parámetros en la celda.
+
+**e) Terminología de técnica, p161 a p168.** Pase, capa y cordón (p161),
+oscilación transversal contra sin movimiento apreciable (p162), secuencias de
+retroceso, bloque y cascada para controlar distorsión (p163 a p166), filete
+intermitente en cadena y escalonado (p167) y cajeado (p168).
+
+**Huecos que siguen:** ángulo de trabajo y ángulo de desplazamiento por su
+nombre; empuje contra arrastre; el stickout tratado como variable ajustable en
+GMAW (sólo aparece como cota en la figura de la p64 y como variable de FCAW
+autoprotegido en la p71); inductancia; flujo de gas con unidades.
 
 ### 5. Discontinuidades — cubierto
 
@@ -129,6 +201,7 @@ Capítulo 4, páginas 133 a 174.
 | Terminología de fusión y penetración | 154 – 155, 174 |
 | Terminología de tamaño de soldadura | 156 – 160 |
 | Terminología de aplicación | 161 – 168 |
+| **Tabla D1.1 de junta precalificada: abertura de raíz, ángulo de ranura y tolerancias** | **243** |
 
 ### 7. Posiciones de soldadura — cubierto, pero escondido
 
@@ -144,6 +217,11 @@ devuelve cero, y por eso es fácil darlas por ausentes.
 
 Para el producto de Tenneco, que es lámina, las posiciones de tubería (5G, 6G,
 6GR) no aplican.
+
+**Añadido en la segunda pasada.** La p243 liga posición con proceso y junta: su
+columna *Permitted Welding Positions* dice qué posiciones admite cada
+designación de junta precalificada. Para GMAW y FCAW en junta B-U2a-GF son F, V
+y OH.
 
 ### 8. Simbología de soldadura — sobre-cubierto
 
@@ -179,6 +257,9 @@ Capítulo 5, páginas 219 a 263.
 | Variables esenciales | 244, 252 – 253 |
 | Pruebas de calificación | 245 |
 | Tabla de límites por tipo y posición, figura 5.19 | 254 |
+| **Precalificación de WPS, tabla D1.1 de junta precalificada** | **243** |
+| **Los nueve pasos de la calificación de un procedimiento** | **251** |
+| Probetas de calificación: ASME QW-463, QW-451.1, API 1104 | 246 – 250 |
 
 **Huecos inevitables:** hoja de configuración de producto y hoja de parámetros.
 Son documentos internos de Tenneco y ningún manual AWS los va a contener.
@@ -187,22 +268,36 @@ Son documentos internos de Tenneco y ningún manual AWS los va a contener.
 
 ## Resultado
 
-| Tema del nivel I | Estado | Páginas dedicadas |
+| Tema del nivel I | Estado | Páginas |
 |---|---|---|
 | 1. Seguridad de soldadura | Cubierto, falta celda robótica | 28 |
 | 2. Equipo GMAW | Parcial | 7 |
-| 3. Mecanismos de transferencia | Parcial, con un error | 2 |
-| 4. Variables del proceso | Ausente | 0 |
+| 3. Mecanismos de transferencia | Parcial, con un error | 3 |
+| 4. Variables del proceso | Parcial, repartido en tres capítulos | ~22 |
 | 5. Discontinuidades | Cubierto | 39 |
-| 6. Geometría de las juntas | Cubierto | 42 |
-| 7. Posiciones | Cubierto | 3 |
+| 6. Geometría de las juntas | Cubierto | 43 |
+| 7. Posiciones | Cubierto | 4 |
 | 8. Simbología | Sobre-cubierto | 44 |
-| 9. Documentos de control | Parcial | 24 |
+| 9. Documentos de control | Parcial | 27 |
 
-Cinco de nueve temas cubiertos, tres parciales, uno ausente.
+**Cinco temas cubiertos, cuatro parciales, ninguno ausente.**
 
 **La causa de fondo:** es un manual de **inspector**, no de **operador**. Un CWI
 juzga si la soldadura cumple; un ajustador de celda la produce. Por eso el
 manual es muy fuerte en lo que se ve y se mide (símbolos, geometría,
-discontinuidades, posiciones) y flojo en lo que se ajusta (variables, equipo,
-transferencia).
+discontinuidades, posiciones) y trata las variables por su consecuencia, no por
+su ajuste: aparecen como entrada de calor en metalurgia, como causa de defecto
+en discontinuidades y como variable esencial en calificación, nunca como una
+perilla que se mueve.
+
+## Lo que sigue faltando, y que hay que cubrir por fuera
+
+1. Seguridad de celda robótica: paros de emergencia, interlocks, vallas, modo
+   teach contra automático, velocidad reducida, LOTO.
+2. Curva V-A de la fuente de voltaje constante; rodillos, liner y difusor;
+   polaridad DCEP en GMAW.
+3. Corriente de transición y criterio de selección del modo de transferencia,
+   más la corrección de la tabla de la p63.
+4. Ángulos de trabajo y desplazamiento, empuje contra arrastre, stickout como
+   variable ajustable, flujo de gas.
+5. Hoja de configuración de producto y hoja de parámetros de Tenneco.
