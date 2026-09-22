@@ -10,7 +10,7 @@ ILUO skill path.
 | Plant tutor | Fernando Robledo |
 | Audience | Plant manager · HR · Engineering manager |
 | Date | 25 September 2026 |
-| Length | 15 slides · ~15 min · English |
+| Length | 16 slides · ~15 min · English |
 
 ## Files
 
@@ -42,9 +42,13 @@ Slides are deliberately sparse. Roughly 1,400 words of narration live in the
 speaker notes, not on the slides, which is about eleven minutes spoken and
 leaves room for questions.
 
-Slides 6 and 7 are the Level I focus the plant supervisor asked for: the nine
-topics and their single exam, then the audit of the two source documents and
-the five gaps neither of them closes.
+Slides 6 to 11 are the Level I focus the plant supervisor asked for. Six lays
+out the nine topics and their single exam. Seven and eight are what was
+actually learned, split the way the two source documents split: the inspector
+manual teaches how a weld is read, the customer standard puts numbers on it.
+Nine audits both documents and names the five gaps neither closes. Ten is the
+honest scorecard, and eleven turns Levels L, U and O into the objectives that
+come next rather than work already under way.
 
 ## Transitions
 
@@ -64,13 +68,13 @@ placeholders for real photographs:
 | Slide | Image | Replace with |
 |---|---|---|
 | 4, Where I work | `producto.jpg` | A photograph of the welding cell |
-| 10, The integration project | `carretera.jpg` | A photograph of the integration |
+| 12, The integration project | `carretera.jpg` | A photograph of the integration |
 
 `valores_tenneco.png` on slide 2 is the official Core Values poster and stays
 as it is.
 
 ## Still to fill in
 
-Slide 10 (*The integration project*) carries four bracketed placeholders: what
+Slide 12 (*The integration project*) carries four bracketed placeholders: what
 the integration is, the role, what it taught, and its status. Everything else
 is final.
