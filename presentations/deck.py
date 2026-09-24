@@ -41,7 +41,22 @@ LIME  = RGBColor(0xD5, 0xFB, 0x00)
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
 GRAY  = RGBColor(0xC6, 0xCD, 0xD1)
 DIM   = RGBColor(0x8A, 0x9B, 0xA8)     # quiet ink for labels and legends
+BLUE  = RGBColor(0x00, 0x33, 0xA0)     # Tenneco blue, the accent on white
+SLATE = RGBColor(0x6B, 0x7A, 0x83)     # secondary ink on white
 FONT  = "Segoe UI"
+
+# Theme tokens. Slides alternate between the dark road and the white layout;
+# slide() switches these before any shape is drawn.
+TXT, SUB, ACC, MUT = WHITE, GRAY, LIME, DIM
+LIGHT = False
+
+def theme(light):
+    global TXT, SUB, ACC, MUT, LIGHT
+    LIGHT = light
+    if light:
+        TXT, SUB, ACC, MUT = NAVY, SLATE, BLUE, SLATE
+    else:
+        TXT, SUB, ACC, MUT = WHITE, GRAY, LIME, DIM
 SW = 13.333
 
 # ---------------------------------------------------------------- helpers
@@ -137,7 +152,11 @@ GLASS_OPACITY = 50                     # percent, native and editable
 _glass_n = [0]
 
 def glass(slide, x, y, w, h, bg="road", tone="blue", name=None, edge=True):
-    """A panel whose fill is the background it covers, lifted and saturated."""
+    """A panel whose fill is the background it covers, lifted and saturated.
+    On white there is nothing to copy, so it becomes a soft navy tint."""
+    if LIGHT:
+        return rect(slide, x, y, w, h, fill=NAVY, opacity=4, line=NAVY,
+                    lw=0.75, line_opacity=12, name=name)
     crop = BG[bg].crop((round(x * PX), round(y * PX),
                         round((x + w) * PX), round((y + h) * PX)))
     crop = crop.filter(ImageFilter.GaussianBlur(5))        # frosted
@@ -166,11 +185,11 @@ def photo(slide, x, y, w, h, caption, name):
     """Designed space for one of Diego's photos. Delete the label, drop the
     photo on top, and crop it to this frame."""
     glass(slide, x, y, w, h, name=name)
-    rect(slide, x + 0.18, y + 0.18, w - 0.36, h - 0.36, line=GRAY, lw=0.75,
+    rect(slide, x + 0.18, y + 0.18, w - 0.36, h - 0.36, line=SUB, lw=0.75,
          line_opacity=35)
     tb, tf = txbox(slide, x, y + h / 2 - 0.30, w, 0.6, align=PP_ALIGN.CENTER)
-    para(tf, "PHOTO", 11, LIME, bold=True, first=True)
-    para(tf, caption, 12, GRAY, space_before=2, align=PP_ALIGN.CENTER)
+    para(tf, "PHOTO", 11, ACC, bold=True, first=True)
+    para(tf, caption, 12, SUB, space_before=2, align=PP_ALIGN.CENTER)
 
 # ---------------------------------------------------------------- deck
 prs = Presentation(SRC)
@@ -191,22 +210,25 @@ def fill_ph(ph, s, size, color, bold):
     r.font.name = FONT
     r.font.color.rgb = color
 
-def slide(title, sub):
-    """Title Image_blank: road background, chevrons bottom left. Nothing may
-    sit in the chevron zone (x 0-2.83, y 6.12 and below)."""
-    s = prs.slides.add_slide(layouts["Title Image_blank"])
+def slide(title, sub, light=False):
+    """Dark: Title Image_blank, road background with the chevrons bottom left,
+    and nothing may sit in the chevron zone (x 0-2.83, y 6.12 and below).
+    Light: Standard_Light, plain white."""
+    theme(light)
+    s = prs.slides.add_slide(
+        layouts["Standard_Light" if light else "Title Image_blank"])
     ph = {p.placeholder_format.idx: p for p in s.placeholders}
-    fill_ph(ph[20], title, 28, WHITE, True)
+    fill_ph(ph[20], title, 28, TXT, True)
     ph[20].name = "!! Title 1"
-    fill_ph(ph[21], sub, 13, LIME, False)
+    fill_ph(ph[21], sub, 13, ACC, False)
     ph[21].name = "!! Subtitle 1"
     return s
 
-def label(slide, x, y, s, size=16, w=6.0, color=LIME):
-    return text(slide, x, y, w, 0.3, s, size, color, bold=True)
+def label(slide, x, y, s, size=16, w=6.0, color=None):
+    return text(slide, x, y, w, 0.3, s, size, color or ACC, bold=True)
 
 def lime_rule(slide, x, y, w=1.20):
-    return rect(slide, x, y, w, 0.03, fill=LIME)
+    return rect(slide, x, y, w, 0.03, fill=ACC)
 
 notes = {}
 
@@ -242,6 +264,7 @@ para(tf, "Engineering Department  |  August 1, 2026 to January 1, 2027",
 
 
 # ============================================================ 2 · WIN
+theme(False)
 s = prs.slides.add_slide(layouts["Impact Slide"])
 for p_ in list(s.placeholders):
     p_.element.getparent().remove(p_.element)
@@ -259,31 +282,32 @@ para(tf, "For me, winning meant taking the longest, hardest weld off a team "
 
 # ============================================================ 3 · scope
 s = slide("Program scope and objective",
-          "Robotics Setter Technician  |  August 1, 2026 to January 1, 2027")
+          "Robotics Setter Technician  |  August 1, 2026 to January 1, 2027",
+          light=True)
 glass(s, 0.28, 1.75, 7.90, 4.25, name="!! Glass A")
 label(s, 0.68, 2.12, "OBJECTIVE")
 tb, tf = txbox(s, 0.68, 2.55, 7.1, 0.9)
 para(tf, "Become a specialist in robotic welding and advanced technical "
-     "support.", 17, WHITE, first=True)
+     "support.", 17, TXT, first=True)
 lime_rule(s, 0.68, 3.62)
 label(s, 0.68, 3.88, "WHY IT MATTERS")
 tb, tf = txbox(s, 0.68, 4.30, 7.1, 1.4)
 para(tf, "When a welding robot stops, the line stops with it. A setter who "
      "can find the cause and adjust the cell on the spot keeps parts moving "
-     "and quality under control.", 14, GRAY, first=True, spacing=1.1)
+     "and quality under control.", 14, SUB, first=True, spacing=1.1)
 
 glass(s, 8.55, 1.75, 4.50, 4.25, name="!! Glass B")
 label(s, 8.95, 2.12, "FINAL PROJECT")
 tb, tf = txbox(s, 8.95, 2.60, 3.75, 3.2)
-para(tf, "An implemented improvement", 14, WHITE, bold=True, first=True)
-para(tf, "In quality, availability or productivity.", 12, GRAY,
+para(tf, "An implemented improvement", 14, TXT, bold=True, first=True)
+para(tf, "In quality, availability or productivity.", 12, SUB,
      space_before=2)
-para(tf, "Mine: 4M, implemented, with 47% less cycle time.", 12, LIME,
+para(tf, "Mine: 4M, implemented, with 47% less cycle time.", 12, ACC,
      space_before=4)
-para(tf, "An updated training process", 14, WHITE, bold=True,
+para(tf, "An updated training process", 14, TXT, bold=True,
      space_before=20)
-para(tf, "How the next setters learn.", 12, GRAY, space_before=2)
-para(tf, "Mine: study material reviewed, schedule rebuilt.", 12, LIME,
+para(tf, "How the next setters learn.", 12, SUB, space_before=2)
+para(tf, "Mine: study material reviewed, schedule rebuilt.", 12, ACC,
      space_before=4)
 
 
@@ -304,36 +328,37 @@ CW, CG = 2.97, 0.30
 for i, (letter, title, body) in enumerate(LEVELS):
     x = 0.28 + i * (CW + CG)
     glass(s, x, 1.85, CW, 3.35, name="!! Card %d" % (i + 1))
-    text(s, x + 0.34, 2.15, CW - 0.6, 0.6, letter, 30, LIME, bold=True)
-    text(s, x + 0.34, 2.90, CW - 0.6, 0.7, title, 16, WHITE, bold=True)
+    text(s, x + 0.34, 2.15, CW - 0.6, 0.6, letter, 30, ACC, bold=True)
+    text(s, x + 0.34, 2.90, CW - 0.6, 0.7, title, 16, TXT, bold=True)
     tb, tf = txbox(s, x + 0.34, 3.72, CW - 0.62, 1.4)
-    para(tf, body, 12, GRAY, first=True, spacing=1.1)
+    para(tf, body, 12, SUB, first=True, spacing=1.1)
 glass(s, 0.28, 5.42, 12.77, 0.62, name="!! Strip")
-text(s, 0.62, 5.62, 2.2, 0.25, "HOW IT WORKS", 11, LIME, bold=True)
+text(s, 0.62, 5.62, 2.2, 0.25, "HOW IT WORKS", 11, ACC, bold=True)
 text(s, 2.75, 5.60, 10.0, 0.3, "Each level builds on the one before: first "
-     "understand, then do, then own it, then improve it.", 12, WHITE)
+     "understand, then do, then own it, then improve it.", 12, TXT)
 
 
 # ============================================================ 5 · timeline
-s = slide("Eight weeks in, fourteen to go", "Program timeline")
+s = slide("Eight weeks in, fourteen to go", "Program timeline",
+          light=True)
 glass(s, 0.66, 2.36, 12.26, 2.78, name="!! Glass A")
 LX0, LX1, LY = 0.84, 12.74, 3.89
-rect(s, LX0, LY, LX1 - LX0, 0.02, fill=GRAY, opacity=45)
+rect(s, LX0, LY, LX1 - LX0, 0.02, fill=SUB, opacity=45)
 MILES = [("Program start", "August 1, 2026", False),
          ("Today", "September 25", True),
          ("Level I exam", "October", False),
          ("Levels L and U", "November to December", False),
          ("Program close", "January 1, 2027", False)]
 XS = [1.95 + k * 2.40 for k in range(5)]
-rect(s, XS[0], LY - 0.005, XS[1] - XS[0], 0.03, fill=LIME)   # distance done
+rect(s, XS[0], LY - 0.005, XS[1] - XS[0], 0.03, fill=ACC)   # distance done
 for k, (name, when, hot) in enumerate(MILES):
     cx = XS[k]
     d = 0.30 if hot else 0.21
     rect(s, cx - d / 2, LY + 0.01 - d / 2, d, d,
-         fill=LIME if (hot or k == 0) else WHITE, shape=MSO_SHAPE.OVAL)
+         fill=ACC if (hot or k == 0) else TXT, shape=MSO_SHAPE.OVAL)
     text(s, cx - 1.15, 2.84, 2.30, 0.45, name, 24 if hot else 19,
-         LIME if hot else WHITE, bold=True, align=PP_ALIGN.CENTER)
-    text(s, cx - 1.15, 4.47, 2.30, 0.3, when, 14, LIME if hot else GRAY,
+         ACC if hot else TXT, bold=True, align=PP_ALIGN.CENTER)
+    text(s, cx - 1.15, 4.47, 2.30, 0.3, when, 14, ACC if hot else SUB,
          bold=hot, align=PP_ALIGN.CENTER)
 
 
@@ -350,9 +375,9 @@ TOPICS = [("Safety", "Working at the cell without putting anyone at risk."),
 for k, (t, d) in enumerate(TOPICS):
     y = 2.58 + k * 0.66
     if k:
-        rect(s, 0.68, y - 0.14, 7.10, 0.01, fill=WHITE, opacity=14)
-    text(s, 0.68, y, 2.2, 0.35, t, 14, WHITE, bold=True)
-    text(s, 2.95, y + 0.01, 4.95, 0.35, d, 13, GRAY)
+        rect(s, 0.68, y - 0.14, 7.10, 0.01, fill=TXT, opacity=14)
+    text(s, 0.68, y, 2.2, 0.35, t, 14, TXT, bold=True)
+    text(s, 2.95, y + 0.01, 4.95, 0.35, d, 13, SUB)
 
 glass(s, 8.55, 1.75, 4.50, 4.25, name="!! Glass B")
 label(s, 8.95, 2.08, "HOW I LEARNED IT")
@@ -362,13 +387,14 @@ HOW = [("616", "pages of training manual and customer standard, read page "
        ("25", "questions of a practice exam from previous years, solved.")]
 for k, (big, d) in enumerate(HOW):
     y = 2.55 + k * 1.10
-    text(s, 8.95, y, 3.8, 0.5, big, 26, LIME, bold=True)
-    text(s, 8.95, y + 0.50, 3.75, 0.5, d, 12, GRAY)
+    text(s, 8.95, y, 3.8, 0.5, big, 26, ACC, bold=True)
+    text(s, 8.95, y + 0.50, 3.75, 0.5, d, 12, SUB)
 
 
 # ============================================================ 7 · progress
 s = slide("Four skills on my own, thirteen in progress",
-          "Progress on the 23 skills of the program")
+          "Progress on the 23 skills of the program",
+          light=True)
 glass(s, 0.28, 1.75, 8.25, 4.25, name="!! Glass A")
 # (level, name, on my own, in progress, not started) - self assessment,
 # same source as the schedule in nivel-I/, plus the 4M improvement.
@@ -379,28 +405,28 @@ ROWS = [("I", "Understands", 0, 9, 0),
 D, DG = 0.26, 0.40
 for k, (lv, nm, own, wip, todo) in enumerate(ROWS):
     y = 2.12 + k * 0.84
-    text(s, 0.68, y - 0.06, 0.5, 0.5, lv, 24, LIME, bold=True)
-    text(s, 1.22, y - 0.01, 2.2, 0.3, nm, 13, WHITE, bold=True)
+    text(s, 0.68, y - 0.06, 0.5, 0.5, lv, 24, ACC, bold=True)
+    text(s, 1.22, y - 0.01, 2.2, 0.3, nm, 13, TXT, bold=True)
     text(s, 1.22, y + 0.26, 2.2, 0.3, "%d skills" % (own + wip + todo), 11,
-         DIM)
+         MUT)
     for j in range(own + wip + todo):
         x = 3.45 + j * DG
         if j < own:
-            rect(s, x, y + 0.06, D, D, fill=LIME, shape=MSO_SHAPE.OVAL)
+            rect(s, x, y + 0.06, D, D, fill=ACC, shape=MSO_SHAPE.OVAL)
         elif j < own + wip:
-            rect(s, x, y + 0.06, D, D, fill=LIME, opacity=35, line=LIME,
+            rect(s, x, y + 0.06, D, D, fill=ACC, opacity=35, line=ACC,
                  lw=1.25, shape=MSO_SHAPE.OVAL)
         else:
-            rect(s, x, y + 0.06, D, D, line=GRAY, lw=1.0, line_opacity=60,
+            rect(s, x, y + 0.06, D, D, line=SUB, lw=1.0, line_opacity=60,
                  shape=MSO_SHAPE.OVAL)
 # legend, inside the panel and clear of the chevrons
-LEG = [("On my own", dict(fill=LIME)),
-       ("In progress", dict(fill=LIME, opacity=35, line=LIME, lw=1.25)),
-       ("Not started", dict(line=GRAY, lw=1.0, line_opacity=60))]
+LEG = [("On my own", dict(fill=ACC)),
+       ("In progress", dict(fill=ACC, opacity=35, line=ACC, lw=1.25)),
+       ("Not started", dict(line=SUB, lw=1.0, line_opacity=60))]
 lx = 3.45
 for t, kw in LEG:
     rect(s, lx, 5.52, 0.18, 0.18, shape=MSO_SHAPE.OVAL, **kw)
-    text(s, lx + 0.28, 5.49, 1.4, 0.25, t, 11, GRAY)
+    text(s, lx + 0.28, 5.49, 1.4, 0.25, t, 11, SUB)
     lx += 1.62
 
 glass(s, 8.85, 1.75, 4.20, 4.25, name="!! Glass B")
@@ -411,9 +437,9 @@ DONE = ["Changing consumables",
         "Closing ANDON calls"]
 for k, t in enumerate(DONE):
     y = 2.62 + k * 0.72
-    rect(s, 9.25, y + 0.09, 0.14, 0.14, fill=LIME, shape=MSO_SHAPE.CHEVRON)
-    text(s, 9.55, y, 3.3, 0.6, t, 14, WHITE)
-text(s, 9.25, 5.45, 3.6, 0.3, "Level I: exam still pending.", 12, LIME,
+    rect(s, 9.25, y + 0.09, 0.14, 0.14, fill=ACC, shape=MSO_SHAPE.CHEVRON)
+    text(s, 9.55, y, 3.3, 0.6, t, 14, TXT)
+text(s, 9.25, 5.45, 3.6, 0.3, "Level I: exam still pending.", 12, ACC,
      bold=True)
 
 
@@ -421,31 +447,32 @@ text(s, 9.25, 5.45, 3.6, 0.3, "Level I: exam still pending.", 12, LIME,
 s = slide("Most of my time goes to industrialization",
           "How my time is split")
 glass(s, 0.28, 1.75, 5.20, 4.25, name="!! Glass A")
-text(s, 0.68, 2.00, 4.4, 0.9, "60%", 54, LIME, bold=True)
-text(s, 0.68, 2.95, 4.4, 0.6, "Industrialization project", 14, WHITE,
+text(s, 0.68, 2.00, 4.4, 0.9, "60%", 54, ACC, bold=True)
+text(s, 0.68, 2.95, 4.4, 0.6, "Industrialization project", 14, TXT,
      bold=True)
-rect(s, 0.68, 3.75, 4.40, 0.16, fill=GRAY, opacity=30)
-rect(s, 0.68, 3.75, 4.40 * 0.6, 0.16, fill=LIME)
-text(s, 0.68, 4.25, 4.4, 0.6, "40%", 30, WHITE, bold=True)
+rect(s, 0.68, 3.75, 4.40, 0.16, fill=SUB, opacity=30)
+rect(s, 0.68, 3.75, 4.40 * 0.6, 0.16, fill=ACC)
+text(s, 0.68, 4.25, 4.4, 0.6, "40%", 30, TXT, bold=True)
 tb, tf = txbox(s, 0.68, 4.85, 4.4, 0.9)
 para(tf, "Support at the robotic cells: stops, adjustments and ANDON calls.",
-     12, GRAY, first=True)
+     12, SUB, first=True)
 
 glass(s, 5.80, 1.75, 7.25, 4.25, name="!! Glass B")
 label(s, 6.20, 2.08, "THE PROJECT")
 tb, tf = txbox(s, 6.20, 2.52, 6.45, 1.0)
 para(tf, "Industrialization of the new Cummins project, together with "
-     "Engineering.", 15, WHITE, first=True, spacing=1.1)
+     "Engineering.", 15, TXT, first=True, spacing=1.1)
 lime_rule(s, 6.20, 3.62)
 label(s, 6.20, 3.88, "WHAT INDUSTRIALIZATION MEANS")
 tb, tf = txbox(s, 6.20, 4.32, 6.45, 1.3)
 para(tf, "Getting a new process ready to run on the floor: equipment, "
-     "programs, trials and the release to production.", 14, GRAY,
+     "programs, trials and the release to production.", 14, SUB,
      first=True, spacing=1.1)
 
 # ============================================================ 9 · improvement idea
 s = slide("Improvement idea: from a manual booth to the 4M cell",
-          "Improvement idea and implementation  |  Done")
+          "Improvement idea and implementation  |  Done",
+          light=True)
 glass(s, 0.28, 1.75, 6.35, 4.25, name="!! Glass A")
 IDEA = [("THE PROBLEM",
          "Long welds, done by hand in a manual booth: 146 s of welding per "
@@ -457,12 +484,12 @@ for k, (lab, d) in enumerate(IDEA):
     y = 2.08 + k * 1.22
     label(s, 0.68, y, lab)
     tb, tf = txbox(s, 0.68, y + 0.42, 5.6, 0.8)
-    para(tf, d, 14, WHITE, first=True, spacing=1.1)
+    para(tf, d, 14, TXT, first=True, spacing=1.1)
 lime_rule(s, 0.68, 4.60)
 label(s, 0.68, 4.80, "IMPLEMENTED")
 tb, tf = txbox(s, 0.68, 5.20, 5.6, 0.7)
 para(tf, "Running in 4M today. The robot welds, and the team member only "
-     "loads and unloads.", 14, LIME, bold=True, first=True, spacing=1.1)
+     "loads and unloads.", 14, ACC, bold=True, first=True, spacing=1.1)
 photo(s, 6.98, 1.75, 6.07, 2.02, "Before: manual welding booth",
       "!! Glass B")
 photo(s, 6.98, 3.98, 6.07, 2.02, "After: 4M robotic cell", "!! Glass C")
@@ -479,33 +506,33 @@ SCALE = 6.0 / 174                        # inches per second
 BX = 0.68
 for k, (nm, ld, wd, ul, auto) in enumerate(CT):
     y = 2.62 + k * 1.22
-    text(s, BX, y, 4.0, 0.3, nm, 14, WHITE, bold=True)
+    text(s, BX, y, 4.0, 0.3, nm, 14, TXT, bold=True)
     x = BX
     for sec, kind in ((ld, "load"), (wd, "weld"), (ul, "unload")):
         w = sec * SCALE
         if kind == "weld":
             seg = rect(s, x, y + 0.38, w - 0.03, 0.46,
-                       fill=LIME if auto else GRAY, opacity=100 if auto else 70)
+                       fill=ACC if auto else SUB, opacity=100 if auto else 70)
             ink = NAVY
         else:
-            seg = rect(s, x, y + 0.38, w - 0.03, 0.46, fill=GRAY, opacity=30)
-            ink = WHITE
+            seg = rect(s, x, y + 0.38, w - 0.03, 0.46, fill=SUB, opacity=30)
+            ink = TXT
         seg.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
         para(seg.text_frame, str(sec), 11 if sec < 10 else 12, ink,
              bold=True, first=True, align=PP_ALIGN.CENTER)
         x += w
     text(s, x + 0.12, y + 0.42, 1.3, 0.4, "%d s" % (ld + wd + ul), 20,
-         LIME if auto else WHITE, bold=True)
+         ACC if auto else TXT, bold=True)
 # legend
 lx = BX
-for t, kw in (("Load and unload", dict(fill=GRAY, opacity=30)),
-              ("Welding by hand", dict(fill=GRAY, opacity=70)),
-              ("Welding by robot", dict(fill=LIME))):
+for t, kw in (("Load and unload", dict(fill=SUB, opacity=30)),
+              ("Welding by hand", dict(fill=SUB, opacity=70)),
+              ("Welding by robot", dict(fill=ACC))):
     rect(s, lx, 5.12, 0.18, 0.18, **kw)
-    text(s, lx + 0.28, 5.09, 1.8, 0.25, t, 11, GRAY)
+    text(s, lx + 0.28, 5.09, 1.8, 0.25, t, 11, SUB)
     lx += 2.10
 text(s, BX, 5.48, 7.5, 0.3, "Same fixture, so loading and unloading take "
-     "the same time. The gain is all in the welding.", 11, DIM)
+     "the same time. The gain is all in the welding.", 11, MUT)
 
 glass(s, 8.85, 1.75, 4.20, 4.25, name="!! Glass B")
 KPI = [("−47%", "cycle time, 174 s to 93 s"),
@@ -513,12 +540,13 @@ KPI = [("−47%", "cycle time, 174 s to 93 s"),
        ("81 s", "saved on every part")]
 for k, (big, lab) in enumerate(KPI):
     y = 2.02 + k * 1.30
-    text(s, 9.25, y, 3.6, 0.6, big, 32, LIME, bold=True)
-    text(s, 9.25, y + 0.66, 3.6, 0.3, lab, 12, GRAY)
+    text(s, 9.25, y, 3.6, 0.6, big, 32, ACC, bold=True)
+    text(s, 9.25, y + 0.66, 3.6, 0.3, lab, 12, SUB)
 
 # ============================================================ 11 · training update
 s = slide("What I would change in how setters learn",
-          "Final project  |  Training process update, a proposal")
+          "Final project  |  Training process update, a proposal",
+          light=True)
 TRAIN = [("01", "Reviewed",
           "616 pages of training manual and customer standard, page by page, "
           "against what Level I asks."),
@@ -531,14 +559,14 @@ TRAIN = [("01", "Reviewed",
 for i, (n, t, d) in enumerate(TRAIN):
     x = 0.28 + i * 4.37
     glass(s, x, 1.85, 4.05, 3.35, name="!! Card %d" % (i + 1))
-    text(s, x + 0.36, 2.15, 3.3, 0.55, n, 30, LIME, bold=True)
-    text(s, x + 0.36, 2.90, 3.3, 0.35, t, 16, WHITE, bold=True)
+    text(s, x + 0.36, 2.15, 3.3, 0.55, n, 30, ACC, bold=True)
+    text(s, x + 0.36, 2.90, 3.3, 0.35, t, 16, TXT, bold=True)
     tb, tf = txbox(s, x + 0.36, 3.40, 3.33, 1.6)
-    para(tf, d, 12, GRAY, first=True, spacing=1.1)
+    para(tf, d, 12, SUB, first=True, spacing=1.1)
 glass(s, 0.28, 5.42, 12.77, 0.62, name="!! Strip")
-text(s, 0.62, 5.62, 2.2, 0.25, "PROPOSAL", 11, LIME, bold=True)
+text(s, 0.62, 5.62, 2.2, 0.25, "PROPOSAL", 11, ACC, bold=True)
 text(s, 2.75, 5.60, 10.0, 0.3, "Use the corrected material and the new "
-     "schedule with the next group of setters.", 12, WHITE)
+     "schedule with the next group of setters.", 12, TXT)
 
 
 # ============================================================ 12 · next
@@ -555,10 +583,10 @@ NEXT = [("L", "Validate settings and find defects at the cell, with support.",
 for k, (lv, d, when) in enumerate(NEXT):
     y = 2.62 + k * 1.05
     if k:
-        rect(s, 0.68, y - 0.18, 7.10, 0.01, fill=WHITE, opacity=14)
-    text(s, 0.68, y - 0.04, 0.5, 0.5, lv, 24, LIME, bold=True)
-    text(s, 1.25, y, 6.5, 0.35, d, 14, WHITE)
-    text(s, 1.25, y + 0.36, 6.5, 0.3, when, 12, GRAY)
+        rect(s, 0.68, y - 0.18, 7.10, 0.01, fill=TXT, opacity=14)
+    text(s, 0.68, y - 0.04, 0.5, 0.5, lv, 24, ACC, bold=True)
+    text(s, 1.25, y, 6.5, 0.35, d, 14, TXT)
+    text(s, 1.25, y + 0.36, 6.5, 0.3, when, 12, SUB)
 
 glass(s, 8.55, 1.75, 4.50, 4.25, name="!! Glass B")
 label(s, 8.95, 2.08, "WHAT I NEED")
@@ -567,12 +595,13 @@ NEED = ["A date for my Level I exam",
         "Your feedback on the training proposal"]
 for k, t in enumerate(NEED):
     y = 2.62 + k * 0.80
-    rect(s, 8.95, y + 0.09, 0.14, 0.14, fill=LIME, shape=MSO_SHAPE.CHEVRON)
-    text(s, 9.25, y, 3.55, 0.7, t, 14, WHITE)
+    rect(s, 8.95, y + 0.09, 0.14, 0.14, fill=ACC, shape=MSO_SHAPE.CHEVRON)
+    text(s, 9.25, y, 3.55, 0.7, t, 14, TXT)
 
 
 # ============================================================ 13 · conclusions
-s = slide("Conclusions and next steps", "What is in place, and what comes next")
+s = slide("Conclusions and next steps", "What is in place, and what comes next",
+          light=True)
 glass(s, 0.28, 1.75, 6.35, 4.05, name="!! Glass A")
 label(s, 0.68, 2.08, "IN PLACE")
 INPLACE = ["Level I studied in full, and four skills done on my own.",
@@ -587,12 +616,13 @@ NEXTS = ["Pass the Level I exam in October.",
          "Keep measuring 4M, and find the next weld to automate."]
 for x, items, w in ((0.68, INPLACE, 5.55), (7.38, NEXTS, 5.27)):
     for k, t in enumerate(items):
-        text(s, x, 2.62 + k * 1.00, w, 0.8, t, 14, WHITE)
-text(s, 3.40, 6.25, 9.6, 0.4, "I came to learn robotic welding, and I am "
-     "already improving it.", 15, LIME, bold=True)
+        text(s, x, 2.62 + k * 1.00, w, 0.8, t, 14, TXT)
+text(s, 0.68 if LIGHT else 3.40, 6.25, 9.6, 0.4, "I came to learn robotic welding, and I am "
+     "already improving it.", 15, ACC, bold=True)
 
 
 # ============================================================ 14 · closing
+theme(False)
 s = prs.slides.add_slide(layouts["Closing Slide"])
 for p_ in list(s.placeholders):
     p_.element.getparent().remove(p_.element)

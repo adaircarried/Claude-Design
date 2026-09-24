@@ -59,9 +59,16 @@ started.
 
 ## Style
 
-The style follows Diego's previous Tenneco deck:
+Backgrounds alternate so the deck does not read as one long block. Slides
+1, 2, 4, 6, 8, 10, 12 and 14 are dark. Slides 3, 5, 7, 9, 11 and 13 use the
+white `Standard_Light` layout, with navy text, Tenneco blue (0033A0) instead
+of lime, and panels in a soft navy tint, since glass has nothing to copy on
+white. The 4M results (slide 10) stay dark on purpose, so the lime numbers
+stand out most.
 
-- Dark road backgrounds.
+The dark slides follow Diego's previous Tenneco deck:
+
+- Road backgrounds.
 - 28 pt white message titles with a 13 pt lime support line.
 - Cards on a 0.28 in margin grid.
 - The lime chevrons are left alone: nothing sits in their zone, bottom left.
