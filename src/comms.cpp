@@ -280,6 +280,24 @@ static void handle_line(char *line)
     report_printf("ERR UNKNOWN '%s' (escribe HELP)\n", cmd);
 }
 
+/* ---------------------------------------------------------------------------
+ * Eco local. Va por report_printf() y no por Serial.print() directo para
+ * respetar el mutex del puerto: si TaskTelemetry estuviera emitiendo una
+ * linea a la vez, los caracteres se entrelazarian a mitad de texto.
+ *
+ * El coste de tomar el mutex por caracter es despreciable porque la fuente
+ * es un humano tecleando, no un flujo de datos.
+ * -------------------------------------------------------------------------*/
+#if CONSOLE_ECHO
+static inline void echo_char(char c)  { report_printf("%c", c); }
+static inline void echo_backspace(void) { report_printf("\b \b"); }
+static inline void echo_newline(void) { report_printf("\r\n"); }
+#else
+static inline void echo_char(char)    { }
+static inline void echo_backspace(void) { }
+static inline void echo_newline(void) { }
+#endif
+
 void comms_init(void)
 {
     g_rx.head = g_rx.tail = 0;
@@ -321,14 +339,25 @@ void TaskComms(void *pv)
         uint8_t b;
         while (ring_get(&g_rx, &b)) {
             if (b == '\n' || b == '\r') {
+                /* Con terminales que envian CR+LF, el segundo caracter llega
+                 * con idx ya a cero y se ignora solo: no hay doble proceso. */
                 if (idx > 0) {
                     line[idx] = '\0';
+                    echo_newline();
                     handle_line(line);
                     idx = 0;
                 }
-            } else if (idx < CMD_LINE_MAX - 1) {
+            } else if (b == 0x08 || b == 0x7F) {
+                /* Retroceso y suprimir. Poder corregir una errata sin
+                 * reescribir el comando entero importa cuando se teclea
+                 * "MOVJ -45 90" treinta veces seguidas en el banco. */
+                if (idx > 0) { idx--; echo_backspace(); }
+            } else if (b >= 0x20 && b < 0x7F && idx < CMD_LINE_MAX - 1) {
+                /* Solo imprimibles: un caracter de control colado en la
+                 * linea no seria visible pero si romperia el parser. */
                 line[idx++] = (char)b;
-            } else {
+                echo_char((char)b);
+            } else if (idx >= CMD_LINE_MAX - 1) {
                 /* Linea mas larga que el maximo: se descarta entera en vez de
                  * procesar un comando truncado, que podria interpretarse como
                  * otro comando distinto. */

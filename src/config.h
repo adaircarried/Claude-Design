@@ -204,6 +204,19 @@
                                            binario sin tocar nada mas. */
 #define CMD_LINE_MAX            96
 
+/* Eco local de la consola: el firmware devuelve por el serial cada caracter
+ * que recibe, para que al teclear a mano se vea lo que se escribe.
+ *
+ * Sin eco, un terminal serial no muestra nada mientras escribes (a diferencia
+ * de una terminal del sistema operativo, que hace el eco ella misma), y no
+ * hay forma de distinguir "no llegan mis pulsaciones" de "llegan pero no se
+ * ven". Durante la puesta a punto del Parcial 1, donde todos los comandos se
+ * escriben a mano, esa diferencia importa.
+ *
+ * PARCIAL 2: poner a 0. Un parser binario no debe devolver nada que no sea
+ * una respuesta del protocolo; el eco corromperia las tramas del enlace. */
+#define CONSOLE_ECHO            1
+
 /* ===========================================================================
  * 9. SEGURIDAD
  * ===========================================================================*/
