@@ -498,8 +498,19 @@ void TaskMotion(void *pv)
         case EXEC_STOPPING:
             if (!g_a1->isRunning() && !g_a2->isRunning()) {
                 g_exec = EXEC_IDLE;
-                if (sv_get_fault() == FAULT_NONE) sv_set_state(STATE_STOPPED);
-                report_line("EVT STOPPED");
+                /* Distinguir una parada normal de una por fallo importa: la
+                 * primera deja el robot listo para seguir, la segunda exige
+                 * un CLEAR explicito del usuario. Antes ambas reportaban
+                 * "EVT STOPPED" y no habia forma de saber cual fue. */
+                const FaultCode_t f = sv_get_fault();
+                if (f == FAULT_NONE) {
+                    sv_set_state(STATE_STOPPED);
+                    report_line("EVT STOPPED");
+                } else {
+                    sv_set_state(STATE_FAULT);
+                    report_printf("EVT FAULT %s (escribe CLEAR para continuar)\n",
+                                  sv_fault_name(f));
+                }
             }
             break;
         }
