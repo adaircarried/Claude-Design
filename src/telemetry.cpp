@@ -25,6 +25,30 @@ void telemetry_init(void)
  * llena. A 115200 baudios eso son ~11.5 caracteres por milisegundo. Por eso
  * nada de esto se llama desde TaskMotion.
  * -------------------------------------------------------------------------*/
+/* ---------------------------------------------------------------------------
+ * Traduce LF suelto a CR+LF al escribir.
+ *
+ * Un terminal serial es un teletipo, no una consola del sistema operativo:
+ *      '\n' (LF) baja una linea, pero deja el cursor en la MISMA columna
+ *      '\r' (CR) es lo que lo devuelve a la columna 0
+ * Sin la traduccion, cada linea empieza donde termino la anterior y el texto
+ * se pisa unos renglones con otros.
+ *
+ * Serial.println() ya inserta CR+LF, por eso report_line() siempre se vio
+ * bien; printf no lo hace, y por eso report_printf() no lo hacia. Se traduce
+ * aqui, en un unico punto, para que quien llame siga escribiendo "\n" a secas
+ * y no haya que acordarse en cada una de las cuarenta cadenas del proyecto.
+ *
+ * La comprobacion de p[-1] evita duplicar el CR si alguien ya escribio CR+LF.
+ * -------------------------------------------------------------------------*/
+static void serial_write_crlf(const char *s)
+{
+    for (const char *p = s; *p; ++p) {
+        if (*p == '\n' && (p == s || p[-1] != '\r')) Serial.write('\r');
+        Serial.write(*p);
+    }
+}
+
 void report_printf(const char *fmt, ...)
 {
     char buf[192];
@@ -34,7 +58,7 @@ void report_printf(const char *fmt, ...)
     va_end(ap);
 
     if (g_serial_mtx && xSemaphoreTake(g_serial_mtx, pdMS_TO_TICKS(100)) == pdTRUE) {
-        Serial.print(buf);
+        serial_write_crlf(buf);
         xSemaphoreGive(g_serial_mtx);
     }
 }
