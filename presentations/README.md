@@ -1,88 +1,109 @@
-# Tenneco intern project presentation
+# Robotics Setter Technician: progress presentation
 
-Executive deck for the internship project review — robotic welding (GMAW),
-ILUO skill path.
+Progress deck for the plant manager. It is built on the official objectives
+of the *Técnico Ajustador Robótica* program and ends with the final project:
+the 4M improvement and the training process update.
 
 | | |
 |---|---|
 | Presenter | Diego Adair de León Márquez |
-| Program | Technical Setter Interns |
+| Program | Robotics Setter Technician (Técnico Ajustador Robótica) |
 | Plant tutor | Fernando Robledo |
-| Audience | Plant manager · HR · Engineering manager |
+| Audience | Plant manager, non-technical |
 | Date | 25 September 2026 |
-| Length | 21 slides · ~13.5 min spoken · English |
+| Length | 15 slides, about 9 minutes of scripted notes, in English |
 
 ## Files
 
-- `Tenneco_Intern_Project_Diego_de_Leon.pptx` — the deck. Speaker notes in
-  English on every slide.
-- `Tenneco_Intern_Project_Diego_de_Leon.pdf` — read-only preview.
-- `deck.py` — generator. Rebuilds the deck from the corporate template so the
-  masters, layouts, logo and photographic backgrounds stay untouched.
+- `Tenneco_Robotics_Setter_Diego_de_Leon.pptx` is the deck. Every slide has
+  English speaker notes.
+- `Tenneco_Robotics_Setter_Diego_de_Leon.pdf` is a read-only preview.
+  LibreOffice renders it without Segoe UI, so lines wrap a little earlier
+  than they do in PowerPoint.
+- `deck.py` is the generator.
 
 ## Rebuilding
 
-The corporate template is marked TENNECO CONFIDENTIAL and is deliberately not
-committed. Put it next to this script as `template.pptx`, or pass its path:
+The corporate template is marked TENNECO CONFIDENTIAL, so it is deliberately
+not committed. Put it next to this script as `template.pptx`, or pass its
+path:
 
 ```bash
-pip install python-pptx
+pip install python-pptx pillow
 python3 deck.py /path/to/Presentacion_de_becarios.pptx
 ```
 
-## Narrative
+## Storyline
 
-Every slide carries a **message title**: it states its conclusion rather than
-naming its topic, with a small eyebrow above it for the section and, where it
-helps, a support line below it for the evidence. Slide 3 is the executive
-summary, placed up front so the argument is complete within the first three
-minutes.
+| # | Slide | Role |
+|---|---|---|
+| 1 | Title | Program information |
+| 2 | Win | The Tenneco value |
+| 3 | Program scope and objective | The official objective and both halves of the final project |
+| 4 | Four levels | I, L, U and O, in plain words |
+| 5 | Eight weeks in, fourteen to go | Timeline, with today highlighted |
+| 6 | Level I | The five topics and how they were learned |
+| 7 | Four skills on my own | Progress on the 23 skills, one dot per skill |
+| 8 | Industrialization | How time is split, 60% project and 40% cell support |
+| 9 to 11 | Improvement | The manual booth, the move to 4M, and before versus after |
+| 12 | Training process update | A proposal: reviewed, found, rebuilt |
+| 13 | Next | Levels L, U and O, and what is needed |
+| 14 | Conclusions | In place and next |
+| 15 | Thank you | |
 
-Slides are deliberately sparse. Roughly 1,400 words of narration live in the
-speaker notes, not on the slides, which is about eleven minutes spoken and
-leaves room for questions.
+The 4M improvement counts as the first skill in progress under *Implementing
+improvement ideas* (Level O), so the totals are 4 on my own, 13 in progress
+and 6 not started. The schedule in `nivel-I/` still lists that skill as not
+started.
 
-Slide 6 opens the Level I block by listing its nine topics, and slides 7 to 13
-walk them: one slide where a topic is big enough to earn it (safety, GMAW
-equipment, TIG, transfer modes), two or three topics to a slide where they are
-short and travel together (joint, position and symbol; discontinuities and
-control documents). TIG is in there because the plant's own written evaluation
-devotes eight of its twenty five questions to it, even though the ILUO matrix
-names only GMAW.
+## Style
 
-Slide 14 audits both source documents and names the five gaps neither closes.
-Fifteen is the honest scorecard, and sixteen turns Levels L, U and O into the
-objectives that come next rather than work already under way.
+The style follows Diego's previous Tenneco deck:
 
-If the slot runs short, slides 4 (*Where I work*) and 10 (*How the metal
-crosses the arc*) are the two that can be deleted without breaking the
-argument.
+- Dark road backgrounds.
+- 28 pt white message titles with a 13 pt lime support line.
+- Cards on a 0.28 in margin grid.
+- The lime chevrons are left alone: nothing sits in their zone, bottom left.
+
+**Glass panels.** Each panel copies the exact piece of layout background it
+sits on. That copy is lightly blurred, lifted toward a light steel blue (gray
+for the *before* card) and saturated, then placed back on the same spot at
+50% opacity. Opacity is a native picture setting (Format Picture >
+Transparency), so it can still be tuned by hand. The generator writes the
+crops to `build/glass/`, which is ignored by git.
 
 ## Transitions
 
-Every slide carries a **Morph** transition, written straight into the slide XML
-behind a markup-compatibility choice: PowerPoint 2016 and newer play Morph,
-anything older falls back to a fade. The four ILUO badges on slides 5 and 6
-share the shape names `!!iluo_I` through `!!iluo_O`, which forces PowerPoint to
-match them, so the level cards animate down into the scorecard rows instead of
-cross-fading. Keep those names if you edit those two slides.
+Every slide uses **Morph**, with a fade fallback for PowerPoint versions older
+than 2016.
 
-## Images
+Titles are named `!! Title 1`. Panels that repeat from slide to slide share
+`!!` names, so PowerPoint slides and resizes them instead of cross-fading:
 
-`assets/` holds three generic images lifted from the corporate template: the
-Core Values poster, a road photo and a product collage. Two of them are
-placeholders for real photographs:
+- `!! Glass A` and `!! Glass B`
+- `!! Card 1` to `!! Card 4`
+- `!! Strip`
 
-| Slide | Image | Replace with |
+Keep those names if you edit the slides.
+
+## Photos
+
+The deck has no photos. Diego adds his own by hand:
+
+| Slide | Frame | Photo |
 |---|---|---|
-| 4, Where I work | `producto.jpg` | A photograph of the welding cell |
-| 17, The integration project | `carretera.jpg` | A photograph of the integration |
+| 9 | PHOTO, Manual welding booth | The booth before the change |
 
-`valores_tenneco.png` on slide 2 is the official Core Values poster and stays
-as it is.
+To use a frame, delete its label, drop the photo on top, and crop the photo to
+the frame. Photos also fit well on slides 8 and 10 if there is room.
 
 ## Still to fill in
 
-Slide 17 (*The integration project*) carries four bracketed placeholders: what
-the integration is, the role, what it taught, and its status. Everything else
-is final.
+- **Slide 8, *My part*:** two bracketed lines, the industrialization project
+  and your role in it. The notes have a matching bracket.
+- **Slide 11, results:** every `XX` value. That is minutes per part before
+  and after, % reduction, welds moved to the robot, and minutes of
+  uncomfortable welding removed per shift. The notes on slide 11 use the same
+  `XX` placeholders.
+- **Slide 10, the four steps:** confirm that they match what was actually
+  done.

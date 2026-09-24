@@ -1,53 +1,55 @@
 # -*- coding: utf-8 -*-
-"""Tenneco intern project deck - Diego Adair de Leon Marquez.
+"""Robotics Setter Technician - progress deck for the plant manager.
 
-Built on top of the corporate template so the masters, layouts, logo and
-photographic backgrounds stay exactly as the brand team shipped them.
+Diego Adair de Leon Marquez. Built on the corporate template, in the style of
+Diego's previous Tenneco deck: dark road backgrounds, glass panels, 28 pt
+white message titles with a lime support line, Morph between every slide.
+
+Glass, the way Diego defines it: every panel is a copy of the exact piece of
+background it sits on, lifted and saturated, then laid back on top at lower
+opacity. Opacity stays a native PowerPoint setting (Format Picture >
+Transparency), so it can be tuned by hand later.
+
+No photos on purpose. Diego places his own photos by hand in the frames
+marked PHOTO.
 """
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
-from pptx.enum.shapes import MSO_SHAPE, MSO_CONNECTOR
+from pptx.enum.shapes import MSO_SHAPE
 from pptx.oxml.ns import qn
 from pptx.oxml import parse_xml
+from PIL import Image, ImageFilter, ImageEnhance
 
 import os
 import sys
+import zipfile
+import io
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Corporate template supplied by the internship program. It is marked
 # TENNECO CONFIDENTIAL, so it is deliberately NOT committed here - drop it
 # next to this script as template.pptx, or pass its path as argv[1].
 SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "template.pptx")
-OUT = os.path.join(HERE, "Tenneco_Intern_Project_Diego_de_Leon.pptx")
+OUT = os.path.join(HERE, "Tenneco_Robotics_Setter_Diego_de_Leon.pptx")
+GLASS_DIR = os.path.join(HERE, "build", "glass")
 
 # ---------------------------------------------------------------- palette
-# Straight from the template's own colour-palette slides.
-NAVY   = RGBColor(0x05, 0x1C, 0x2C)   # primary
-CARD   = RGBColor(0x0B, 0x2A, 0x3E)   # navy one step up, for cards on dark
-LIME   = RGBColor(0xD5, 0xFB, 0x00)   # accent - used sparingly, never as data
-WHITE  = RGBColor(0xFF, 0xFF, 0xFF)
-GRAYL  = RGBColor(0xC6, 0xCD, 0xD1)
-BLUE   = RGBColor(0x00, 0x33, 0xA0)   # Tenneco blue
-MUTED  = RGBColor(0x6E, 0x7C, 0x87)   # muted ink on light
-MUTEDD = RGBColor(0x9F, 0xAF, 0xBA)   # muted ink on dark
-TINT   = RGBColor(0xF4, 0xF6, 0xF7)   # card surface on light
-RULE   = RGBColor(0x1B, 0x38, 0x4A)   # hairline on dark
-FONT   = "Segoe UI"
-
-# Ordered status ramp, single hue, light -> dark. Status is never carried by
-# colour alone: every use ships with a written legend and a count.
-S_DONE, S_WIP, S_NOT = 2, 1, 0
-FILL = {S_DONE: BLUE,
-        S_WIP:  RGBColor(0x5C, 0x85, 0xD6),
-        S_NOT:  RGBColor(0xE3, 0xE7, 0xEB)}
-
+NAVY  = RGBColor(0x05, 0x1C, 0x2C)
+LIME  = RGBColor(0xD5, 0xFB, 0x00)
+WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+GRAY  = RGBColor(0xC6, 0xCD, 0xD1)
+DIM   = RGBColor(0x8A, 0x9B, 0xA8)     # quiet ink for labels and legends
+FONT  = "Segoe UI"
 SW = 13.333
 
 # ---------------------------------------------------------------- helpers
-def txbox(slide, x, y, w, h, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP):
+def txbox(slide, x, y, w, h, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP,
+          name=None):
     tb = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
+    if name:
+        tb.name = name
     tf = tb.text_frame
     tf.word_wrap = True
     tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
@@ -73,23 +75,41 @@ def para(tf, text, size, color, bold=False, first=False, space_before=0,
     r.font.color.rgb = color
     return p
 
-def rect(slide, x, y, w, h, fill=None, line=None, lw=1.0,
-         shape=MSO_SHAPE.RECTANGLE):
+def text(slide, x, y, w, h, s, size, color, bold=False, italic=False,
+         align=PP_ALIGN.LEFT, name=None, anchor=MSO_ANCHOR.TOP):
+    tb, tf = txbox(slide, x, y, w, h, align=align, name=name, anchor=anchor)
+    para(tf, s, size, color, bold=bold, italic=italic, first=True)
+    return tb, tf
+
+def _alpha(clr_parent, pct):
+    """Add <a:alpha> to the srgbClr inside a solidFill (pct = opacity)."""
+    clr = clr_parent.find(qn('a:srgbClr'))
+    clr.append(parse_xml(
+        '<a:alpha xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/'
+        'main" val="%d"/>' % int(pct * 1000)))
+
+def rect(slide, x, y, w, h, fill=None, line=None, lw=0.75, opacity=100,
+         line_opacity=100, shape=MSO_SHAPE.RECTANGLE, name=None):
     sp = slide.shapes.add_shape(shape, Inches(x), Inches(y), Inches(w), Inches(h))
+    if name:
+        sp.name = name
     if fill is None:
         sp.fill.background()
     else:
         sp.fill.solid()
         sp.fill.fore_color.rgb = fill
+        if opacity < 100:
+            _alpha(sp._element.spPr.find(qn('a:solidFill')), opacity)
     if line is None:
         sp.line.fill.background()
     else:
         sp.line.color.rgb = line
         sp.line.width = Pt(lw)
-    sp.shadow.inherit = False
-    # drop the theme style reference - it re-applies a drop shadow in some
-    # renderers even when effectLst is empty
-    st = sp._element.find('{http://schemas.openxmlformats.org/presentationml/2006/main}style')
+        if line_opacity < 100:
+            ln = sp._element.spPr.find(qn('a:ln'))
+            _alpha(ln.find(qn('a:solidFill')), line_opacity)
+    # the theme style reference re-applies a drop shadow in some renderers
+    st = sp._element.find(qn('p:style'))
     if st is not None:
         sp._element.remove(st)
     tf = sp.text_frame
@@ -97,37 +117,60 @@ def rect(slide, x, y, w, h, fill=None, line=None, lw=1.0,
     tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
     return sp
 
-def badge(slide, x, y, d, letter, fill, color, size):
-    sp = rect(slide, x, y, d, d, fill=fill, shape=MSO_SHAPE.OVAL)
-    sp.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
-    para(sp.text_frame, letter, size, color, bold=True, first=True,
-         align=PP_ALIGN.CENTER)
-    return sp
+# ---------------------------------------------------------------- glass
+# Layout backgrounds, read straight out of the template so the glass always
+# copies the real pixels behind it (1920 x 1080, 144 px per inch).
+_tz = zipfile.ZipFile(SRC)
+BG = {
+    "road":   Image.open(io.BytesIO(_tz.read("ppt/media/image4.jpg"))).convert("RGB"),
+    "impact": Image.open(io.BytesIO(_tz.read("ppt/media/image6.jpg"))).convert("RGB"),
+}
+PX = 1920 / SW
 
-def dash(slide, x, y, w=0.69, color=LIME, lw=2.25):
-    """The tick the template itself sets above a section title."""
-    ln = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(x), Inches(y),
-                                    Inches(x + w), Inches(y))
-    ln.line.color.rgb = color
-    ln.line.width = Pt(lw)
-    return ln
+# Lift colours. The panel is blend(background, lift) and then laid over the
+# same background at GLASS_OPACITY, so the texture stays visible through it.
+TONES = {
+    "blue": ((98, 152, 192), 1.25),    # lands around RGB 32 65 93 on the road
+    "gray": ((150, 158, 166), 0.35),   # neutral, for the "before" state
+}
+GLASS_OPACITY = 50                     # percent, native and editable
+_glass_n = [0]
 
-ASSETS = os.path.join(HERE, "assets")
+def glass(slide, x, y, w, h, bg="road", tone="blue", name=None, edge=True):
+    """A panel whose fill is the background it covers, lifted and saturated."""
+    crop = BG[bg].crop((round(x * PX), round(y * PX),
+                        round((x + w) * PX), round((y + h) * PX)))
+    crop = crop.filter(ImageFilter.GaussianBlur(5))        # frosted
+    lift, sat = TONES[tone]
+    crop = Image.blend(crop, Image.new("RGB", crop.size, lift), 0.5)
+    crop = ImageEnhance.Color(crop).enhance(sat)
+    os.makedirs(GLASS_DIR, exist_ok=True)
+    _glass_n[0] += 1
+    path = os.path.join(GLASS_DIR, "glass_%02d.jpg" % _glass_n[0])
+    crop.save(path, quality=90)
 
-def img(slide, name, x, y, w=None, h=None):
-    """Imagen generica del template. Diego las reemplaza por fotos reales."""
-    kw = {}
-    if w: kw["width"] = Inches(w)
-    if h: kw["height"] = Inches(h)
-    return slide.shapes.add_picture(os.path.join(ASSETS, name),
-                                    Inches(x), Inches(y), **kw)
+    pic = slide.shapes.add_picture(path, Inches(x), Inches(y),
+                                   Inches(w), Inches(h))
+    pic.name = name or "Glass %d" % _glass_n[0]
+    pic._element.nvPicPr.cNvPr.set("descr", "Decorative glass panel")
+    blip = pic._element.blipFill.find(qn('a:blip'))
+    blip.insert(0, parse_xml(
+        '<a:alphaModFix xmlns:a="http://schemas.openxmlformats.org/'
+        'drawingml/2006/main" amt="%d"/>' % (GLASS_OPACITY * 1000)))
+    if edge:   # the thin light rim that separates glass from background
+        rect(slide, x, y, w, h, line=WHITE, lw=0.75, line_opacity=16,
+             name=(name + " rim") if name else None)
+    return pic
 
-def chev(slide, x, y, size=0.22, color=LIME, n=2, gap=0.16):
-    """Brand chevron motif, used as the marker that carries the eye forward."""
-    for i in range(n):
-        sp = rect(slide, x + i * gap, y, size, size, fill=color,
-                  shape=MSO_SHAPE.CHEVRON)
-    return sp
+def photo(slide, x, y, w, h, caption, name):
+    """Designed space for one of Diego's photos. Delete the label, drop the
+    photo on top, and crop it to this frame."""
+    glass(slide, x, y, w, h, name=name)
+    rect(slide, x + 0.18, y + 0.18, w - 0.36, h - 0.36, line=GRAY, lw=0.75,
+         line_opacity=35)
+    tb, tf = txbox(slide, x, y + h / 2 - 0.30, w, 0.6, align=PP_ALIGN.CENTER)
+    para(tf, "PHOTO", 11, LIME, bold=True, first=True)
+    para(tf, caption, 12, GRAY, space_before=2, align=PP_ALIGN.CENTER)
 
 # ---------------------------------------------------------------- deck
 prs = Presentation(SRC)
@@ -139,826 +182,540 @@ for sid in list(sld_lst)[1:]:            # keep slide 1, drop the sample deck
     prs.part.drop_rel(sid.get(RELNS))
     sld_lst.remove(sid)
 
-def new(layout_name, number, dark, footer=True):
-    s = prs.slides.add_slide(layouts[layout_name])
-    for ph in list(s.placeholders):      # start from a clean canvas
-        ph.element.getparent().remove(ph.element)
-    if footer:
-        tb, tf = txbox(s, 0.28, 7.24, 4.0, 0.2)
-        para(tf, "TENNECO CONFIDENTIAL", 8, MUTEDD if dark else MUTED, first=True)
-        tb, tf = txbox(s, 12.10, 7.22, 0.55, 0.24, align=PP_ALIGN.RIGHT)
-        para(tf, str(number), 9, MUTEDD if dark else MUTED, first=True)
+def fill_ph(ph, s, size, color, bold):
+    tf = ph.text_frame
+    tf.text = s
+    r = tf.paragraphs[0].runs[0]
+    r.font.size = Pt(size)
+    r.font.bold = bold
+    r.font.name = FONT
+    r.font.color.rgb = color
+
+def slide(title, sub):
+    """Title Image_blank: road background, chevrons bottom left. Nothing may
+    sit in the chevron zone (x 0-2.83, y 6.12 and below)."""
+    s = prs.slides.add_slide(layouts["Title Image_blank"])
+    ph = {p.placeholder_format.idx: p for p in s.placeholders}
+    fill_ph(ph[20], title, 28, WHITE, True)
+    ph[20].name = "!! Title 1"
+    fill_ph(ph[21], sub, 13, LIME, False)
+    ph[21].name = "!! Subtitle 1"
     return s
 
-def head(s, eyebrow, title, sub, dark):
-    """Message title: the slide asserts its conclusion, the eyebrow says which
-    section we are in, the support line carries the evidence."""
-    dash(s, 0.53, 0.62)
-    tb, tf = txbox(s, 0.5, 0.78, 12.4, 0.26)
-    para(tf, eyebrow, 10, MUTEDD if dark else MUTED, bold=True, first=True)
-    if title:
-        tb, tf = txbox(s, 0.5, 1.02, 12.4, 0.5)
-        para(tf, title, 30, LIME if dark else NAVY, bold=True, first=True)
-    if sub:
-        tb, tf = txbox(s, 0.5, 1.62, 11.6, 0.34)
-        para(tf, sub, 13, MUTEDD if dark else MUTED, first=True)
+def label(slide, x, y, s, size=16, w=6.0, color=LIME):
+    return text(slide, x, y, w, 0.3, s, size, color, bold=True)
+
+def lime_rule(slide, x, y, w=1.20):
+    return rect(slide, x, y, w, 0.03, fill=LIME)
 
 notes = {}
 
 # ============================================================ 1 · title
-
-
 s1 = prs.slides[0]
 ph = {p.placeholder_format.idx: p for p in s1.placeholders}
 
-def only_run(p_ph, text):
+def only_run(p_ph, s):
     tf = p_ph.text_frame
     for pa in list(tf.paragraphs)[1:]:
         pa._p.getparent().remove(pa._p)
     p0 = tf.paragraphs[0]
     for r in list(p0.runs)[1:]:
         r._r.getparent().remove(r._r)
-    p0.runs[0].text = text
-    return tf, p0
+    p0.runs[0].text = s
+    return p0.runs[0]
 
-only_run(ph[13], "Technical Setter Interns")
-only_run(ph[14], "Diego Adair de León Márquez")
-tf, p0 = only_run(ph[15], "Universidad Politécnica de Aguascalientes")
-p2 = tf.add_paragraph()
-p2.alignment = p0.alignment
-r = p2.add_run()
-r.text = "Mechatronics Engineering  ·  9th term"
-r.font.size = Pt(14); r.font.name = FONT; r.font.color.rgb = GRAYL
+r = only_run(ph[13], "Robotics Setter Technician Program")
+r.font.size = Pt(30); r.font.bold = True; r.font.color.rgb = WHITE
+ph[13].name = "!! Title 1"
+r = only_run(ph[14], "Robotic welding, from learning to improvement")
+r.font.size = Pt(20); r.font.bold = True; r.font.color.rgb = LIME
+r = only_run(ph[15], "Diego Adair de León Márquez")
+r.font.size = Pt(13); r.font.color.rgb = WHITE
 
-# lime kicker above the title, so the discipline reads before the name
-tb, tf = txbox(s1, 0.0, 2.02, SW, 0.3, align=PP_ALIGN.CENTER)
-para(tf, "ROBOTIC WELDING   ·   ILUO SKILL PATH", 12, LIME, bold=True,
-     first=True)
-
-tb, tf = txbox(s1, 0.0, 5.52, SW, 0.28, align=PP_ALIGN.CENTER)
-para(tf, "Plant tutor:  Fernando Robledo", 13, WHITE, first=True)
-tb, tf = txbox(s1, 0.0, 5.94, SW, 0.28, align=PP_ALIGN.CENTER)
-para(tf, "Tenneco Aguascalientes  ·  Clean Air  ·  September 25, 2026",
-     11, GRAYL, first=True)
+tb, tf = txbox(s1, 0.0, 5.35, SW, 1.0, align=PP_ALIGN.CENTER)
+para(tf, "Universidad Politécnica de Aguascalientes  |  Mechatronics "
+     "Engineering, 9th term", 11, GRAY, first=True)
+para(tf, "Plant Tutor: Fernando Robledo", 11, GRAY, space_before=2,
+     align=PP_ALIGN.CENTER)
+para(tf, "Engineering Department  |  August 1, 2026 to January 1, 2027",
+     11, LIME, space_before=2, align=PP_ALIGN.CENTER)
 
 notes[0] = (
-    "Good morning. My name is Diego de Leon, ninth term Mechatronics at UPA. "
-    "For the last two months I have been the welding intern in the robotic "
-    "cells here in Aguascalientes, with Fernando Robledo as my plant tutor. In "
-    "the next fifteen minutes I want to show you exactly where I stand on the "
-    "welding skill path, what I actually learned, and the four things I need "
-    "from you to finish it before January.")
-
+    "Good morning. My name is Diego de León, and I study Mechatronics "
+    "Engineering at the Universidad Politécnica de Aguascalientes. Since "
+    "August I have been part of the Robotics Setter Technician program here "
+    "in Aguascalientes, with Fernando Robledo as my plant tutor. In the next "
+    "fifteen minutes I will show you what the program asks of me, what I have "
+    "learned so far, and the improvement we already put on the floor.")
 
 # ============================================================ 2 · WIN
-
-
-# Deliberately almost empty: one word, one definition, one line of his own.
-s = new("Standard_Dark", 2, dark=True)
-head(s, "OUR VALUES", None, None, dark=True)
-
-img(s, "valores_tenneco.png", 9.42, 1.42, h=4.9)
-tb, tf = txbox(s, 0.5, 1.58, 8.0, 1.6)
-para(tf, "WIN", 108, LIME, bold=True, first=True)
-
-tb, tf = txbox(s, 0.56, 3.5, 8.4, 0.4)
-para(tf, "“We must earn the trust of our employees and customers.”",
-     17, GRAYL, italic=True, first=True)
-
-rect(s, 0.5, 4.5, 8.6, 0.02, fill=RULE)
-tb, tf = txbox(s, 0.56, 4.96, 8.5, 0.9)
-para(tf, "Nobody hands an intern a welding torch.", 26, WHITE, bold=True,
-     first=True)
-para(tf, "You earn it.", 26, LIME, bold=True, space_before=6)
+s = prs.slides.add_slide(layouts["Impact Slide"])
+for p_ in list(s.placeholders):
+    p_.element.getparent().remove(p_.element)
+glass(s, 0.92, 2.00, 11.50, 4.00, bg="impact", name="!! Glass A")
+text(s, 1.40, 2.45, 10.6, 0.3, "THE TENNECO VALUE I IDENTIFY WITH", 12, LIME,
+     bold=True)
+text(s, 1.40, 3.00, 10.6, 1.0, "Win", 42, WHITE, bold=True, name="!! Title 1")
+lime_rule(s, 1.40, 4.25, 1.5)
+tb, tf = txbox(s, 1.40, 4.60, 9.9, 1.4)
+para(tf, "We must earn the trust of our employees and customers.", 15, GRAY,
+     italic=True, first=True)
+para(tf, "For me, winning meant taking the longest, hardest weld off a team "
+     "member’s hands.", 14, LIME, space_before=10)
 
 notes[1] = (
-    "The value I identify with is WIN, and I want to explain why in one idea. "
-    "On the floor, nobody lets an intern touch a welding cell because of a job "
-    "title. You earn it. I earned mine by being the one who showed up when a "
-    "cell went down, not by waiting for a training session to be scheduled. "
-    "And the day the technicians started calling me instead of waiting for the "
-    "engineer, that was the moment I felt I had won something real. Winning "
-    "here is not about being right. It is about the line running.")
+    "The Tenneco value I identify with is Win. Win means earning the trust of "
+    "our people and our customers. On the floor, trust is not given because "
+    "of a title. You earn it by showing up when a robot stops, by learning "
+    "the process properly, and by making someone else’s job better. The "
+    "clearest moment for me was the improvement I will show you later: a "
+    "long, uncomfortable weld that a team member did by hand now runs on a "
+    "robot. That is what winning looks like to me.")
 
-# ============================================================ 3 · summary
+# ============================================================ 3 · scope
+s = slide("Program scope and objective",
+          "Robotics Setter Technician  |  August 1, 2026 to January 1, 2027")
+glass(s, 0.28, 1.75, 7.90, 4.25, name="!! Glass A")
+label(s, 0.68, 2.12, "OBJECTIVE")
+tb, tf = txbox(s, 0.68, 2.55, 7.1, 0.9)
+para(tf, "Become a specialist in robotic welding and advanced technical "
+     "support.", 17, WHITE, first=True)
+lime_rule(s, 0.68, 3.62)
+label(s, 0.68, 3.88, "WHY IT MATTERS")
+tb, tf = txbox(s, 0.68, 4.30, 7.1, 1.4)
+para(tf, "When a welding robot stops, the line stops with it. A setter who "
+     "can find the cause and adjust the cell on the spot keeps parts moving "
+     "and quality under control.", 14, GRAY, first=True, spacing=1.1)
 
-
-# Bottom line up front: if the room only hears three minutes, it hears this.
-s = new("Standard_Light", 3, dark=False)
-head(s, "EXECUTIVE SUMMARY", "Capable on the floor, not yet on paper", None,
-     dark=False)
-
-SW3, SS3 = 3.95, 4.19
-for i, (label, big, body) in enumerate([
-        ("WHAT I LEARNED", "9 of 9",
-         "Level I topics studied, none of them validated yet"),
-        ("WHERE IT CAME FROM", "616",
-         "pages of manual and customer standard, audited page by page"),
-        ("WHAT I NEED", "4", "commitments, and none of them cost money")]):
-    x = 0.5 + i * SS3
-    rect(s, x, 2.24, SW3, 2.3, fill=NAVY)
-    tb, tf = txbox(s, x + 0.36, 2.56, SW3 - 0.72, 1.7)
-    para(tf, label, 10, MUTEDD, bold=True, first=True)
-    para(tf, big, 40, LIME, bold=True, space_before=10)
-    para(tf, body, 14, GRAYL, space_before=14, spacing=1.2)
-
-rect(s, 0.5, 5.06, 12.33, 1.1, fill=LIME)
-tb, tf = txbox(s, 0.92, 5.28, 11.5, 0.7, anchor=MSO_ANCHOR.MIDDLE)
-para(tf, "By January 1 I can be certified at Levels I and L.", 20, NAVY,
-     bold=True, first=True)
+glass(s, 8.55, 1.75, 4.50, 4.25, name="!! Glass B")
+label(s, 8.95, 2.12, "FINAL PROJECT")
+tb, tf = txbox(s, 8.95, 2.60, 3.75, 3.2)
+para(tf, "An implemented improvement", 14, WHITE, bold=True, first=True)
+para(tf, "In quality, availability or productivity.", 12, GRAY,
+     space_before=2)
+para(tf, "Mine: a manual weld moved to the 4M robotic cell.", 12, LIME,
+     space_before=4)
+para(tf, "An updated training process", 14, WHITE, bold=True,
+     space_before=20)
+para(tf, "How the next setters learn.", 12, GRAY, space_before=2)
+para(tf, "Mine: study material reviewed, schedule rebuilt.", 12, LIME,
+     space_before=4)
 
 notes[2] = (
-    "Before anything else, here is the whole presentation in three numbers, in "
-    "case we run short on time. I have studied all nine topics of level one, "
-    "and not one of them is formally validated yet, because the exam has not "
-    "happened. That study came out of six hundred and sixteen pages, the "
-    "inspector manual and the customer standard, which I went through page by "
-    "page. And I need four things from you before January, none of which cost "
-    "money. If you only remember one line today, make it the green one: by "
-    "January first I can be certified at levels I and L, if those four "
-    "commitments get a date on a calendar.")
+    "This is the program in one sentence: become a specialist in robotic "
+    "welding and advanced technical support. It matters because when a "
+    "welding robot stops, the line stops with it. The program closes with a "
+    "final project in two parts. First, an improvement that is actually "
+    "implemented, in quality, availability or productivity. Second, an update "
+    "to the training process, so the next setters learn faster. I already "
+    "have something real for both, and I will show you each one.")
 
-# ============================================================ 4 · context
-
-
-s = new("Standard_Light", 4, dark=False)
-head(s, "WHERE I WORK", "Few welding cells, and they run stable", None,
-     dark=False)
-
-CW, CSTEP = 2.8575, 3.1575
-for i, (lbl, big) in enumerate([("PRODUCT",   "Exhaust systems"),
-                                ("PROCESS",   "GMAW (MIG/MAG)"),
-                                ("ROBOTS",    "Yaskawa"),
-                                ("EQUIPMENT", "SKS, Miller")]):
-    x = 0.5 + i * CSTEP
-    rect(s, x, 2.28, CW, 1.9, fill=TINT)
-    tb, tf = txbox(s, x + 0.3, 2.6, CW - 0.6, 1.3)
-    para(tf, lbl, 9.5, BLUE, bold=True, first=True)
-    para(tf, big, 20, NAVY, bold=True, space_before=12, spacing=1.08)
-
-# imagen generica del template: Diego la cambia por una foto de su celda
-img(s, "producto.jpg", 0.5, 4.5, h=1.95)
-rect(s, 6.72, 4.5, 6.11, 1.95, fill=NAVY)
-tb, tf = txbox(s, 7.1, 4.78, 5.4, 1.4, anchor=MSO_ANCHOR.MIDDLE)
-para(tf, "So I could not learn by waiting for a breakdown.", 19, LIME,
-     bold=True, first=True, spacing=1.14)
-para(tf, "My hours went wherever the work was.", 13, GRAYL, space_before=10)
+# ============================================================ 4 · ILUO path
+s = slide("Four levels, from understanding to improving",
+          "The skill path of the program")
+LEVELS = [
+    ("I", "Understands",
+     "Safety, the welding process, the procedure (WPS), defects and settings."),
+    ("L", "Does it with support",
+     "Basic adjustments, checking settings and changing consumables."),
+    ("U", "Does it alone",
+     "Programming the robot (SKS), creating programs and setting them up."),
+    ("O", "Improves and teaches",
+     "Troubleshooting, training others, Lean and continuous improvement."),
+]
+CW, CG = 2.97, 0.30
+for i, (letter, title, body) in enumerate(LEVELS):
+    x = 0.28 + i * (CW + CG)
+    glass(s, x, 1.85, CW, 3.35, name="!! Card %d" % (i + 1))
+    text(s, x + 0.34, 2.15, CW - 0.6, 0.6, letter, 30, LIME, bold=True)
+    text(s, x + 0.34, 2.90, CW - 0.6, 0.7, title, 16, WHITE, bold=True)
+    tb, tf = txbox(s, x + 0.34, 3.72, CW - 0.62, 1.4)
+    para(tf, body, 12, GRAY, first=True, spacing=1.1)
+glass(s, 0.28, 5.42, 12.77, 0.62, name="!! Strip")
+text(s, 0.62, 5.62, 2.2, 0.25, "HOW IT WORKS", 11, LIME, bold=True)
+text(s, 2.75, 5.60, 10.0, 0.3, "Each level builds on the one before: first "
+     "understand, then do, then own it, then improve it.", 12, WHITE)
 
 notes[3] = (
-    "Quick context. We weld exhaust systems, robotic GMAW, mostly Yaskawa "
-    "robots with SKS and Miller equipment. There is one Fanuc I have not "
-    "touched yet. The line at the bottom is the one that matters: my zone has "
-    "few welding cells and they are stable. That is good news for the plant, "
-    "but it means I could not learn by waiting for something to break. My "
-    "hours went wherever the work was, and that is exactly why my progress "
-    "looks the way it does on the next slides.")
+    "The program follows four levels, the same ILUO path the plant uses for "
+    "any skill. I is understanding: safety, how the welding process works, "
+    "the approved procedure, defects and settings. L is doing it with "
+    "support: adjustments, checking settings and changing consumables. U is "
+    "doing it alone, which here means programming the robot. And O is the "
+    "highest level: solving problems, teaching others and improving the "
+    "process. Each level builds on the one before.")
 
-# ============================================================ 5 · ILUO path
-
-
-s = new("Standard_Light", 5, dark=False)
-head(s, "THE ILUO SKILL PATH", "Four levels, and half the hours are for teaching",
-     None, dark=False)
-
-for i, (letter, name, meaning, vol) in enumerate([
-        ("I", "Instructed", "I know the theory",         "9 skills · 4 h"),
-        ("L", "Learning",   "I do it with support",      "5 skills · 8 h"),
-        ("U", "Uses",       "I do it on my own",         "3 skills · 8 h"),
-        ("O", "Others",     "I teach it and improve it", "6 skills · 20 h")]):
-    x = 0.5 + i * CSTEP
-    rect(s, x, 2.24, CW, 3.06, fill=NAVY)
-    b = badge(s, x + 0.3, 2.56, 0.78, letter, LIME, NAVY, 28)
-    b.name = "!!iluo_%s" % letter          # morph anchor into the next slide
-    tb, tf = txbox(s, x + 0.3, 3.66, CW - 0.6, 1.4)
-    para(tf, name, 19, WHITE, bold=True, first=True)
-    para(tf, meaning, 13.5, GRAYL, space_before=8, spacing=1.15)
-    para(tf, vol, 13, LIME, bold=True, space_before=16)
-    if i < 3:
-        chev(s, x + CW + 0.04, 3.86, size=0.22, n=1)
-
-tb, tf = txbox(s, 0.5, 5.66, 12.33, 0.5)
-para(tf, "Every level has its own gate: a written exam, a validation on the "
-         "floor, a practical exam, an implementation review.",
-     13, MUTED, first=True, spacing=1.2)
+# ============================================================ 5 · timeline
+s = slide("Eight weeks in, fourteen to go", "Program timeline")
+glass(s, 0.66, 2.36, 12.26, 2.78, name="!! Glass A")
+LX0, LX1, LY = 0.84, 12.74, 3.89
+rect(s, LX0, LY, LX1 - LX0, 0.02, fill=GRAY, opacity=45)
+MILES = [("Program start", "August 1, 2026", False),
+         ("Today", "September 25", True),
+         ("Level I exam", "October", False),
+         ("Levels L and U", "November to December", False),
+         ("Program close", "January 1, 2027", False)]
+XS = [1.95 + k * 2.40 for k in range(5)]
+rect(s, XS[0], LY - 0.005, XS[1] - XS[0], 0.03, fill=LIME)   # distance done
+for k, (name, when, hot) in enumerate(MILES):
+    cx = XS[k]
+    d = 0.30 if hot else 0.21
+    rect(s, cx - d / 2, LY + 0.01 - d / 2, d, d,
+         fill=LIME if (hot or k == 0) else WHITE, shape=MSO_SHAPE.OVAL)
+    text(s, cx - 1.15, 2.84, 2.30, 0.45, name, 24 if hot else 19,
+         LIME if hot else WHITE, bold=True, align=PP_ALIGN.CENTER)
+    text(s, cx - 1.15, 4.47, 2.30, 0.3, when, 14, LIME if hot else GRAY,
+         bold=hot, align=PP_ALIGN.CENTER)
 
 notes[4] = (
-    "This is the path the plant defines for a welding technician. Four levels, "
-    "twenty three skills, forty hours. I is knowing the theory. L is doing it "
-    "with support. U is doing it alone. O is teaching it and improving the "
-    "process. Two things worth noticing. First, each level assumes the one "
-    "before it. Second, twenty of the forty hours sit in level O. This program "
-    "is not designed to certify one person. It is designed so that one person "
-    "multiplies.")
+    "Here is where we are in time. The program started on August 1 and "
+    "closes on January 1. Today I am eight weeks in, with fourteen to go. "
+    "The next step is the Level I exam, planned for October. After that, "
+    "November and December are for Levels L and U, where the work moves from "
+    "knowing to doing: first with support, then on my own. One thing to keep "
+    "in mind: there are no fixed training hours. Most of the learning happens "
+    "while we attend real stops at the cells.")
 
-# ============================================================ 6 · nivel I
+# ============================================================ 6 · Level I
+s = slide("Level I: understand it before you touch the robot",
+          "What I learned")
+glass(s, 0.28, 1.75, 7.90, 4.25, name="!! Glass A")
+label(s, 0.68, 2.08, "FIVE TOPICS")
+TOPICS = [("Safety", "Working at the cell without putting anyone at risk."),
+          ("GMAW welding", "How wire, gas and an electric arc join the steel."),
+          ("The WPS", "The approved recipe that every weld has to follow."),
+          ("Defects", "Recognizing a bad weld and understanding its cause."),
+          ("Parameters", "The settings that shape the weld, and their limits.")]
+for k, (t, d) in enumerate(TOPICS):
+    y = 2.58 + k * 0.66
+    if k:
+        rect(s, 0.68, y - 0.14, 7.10, 0.01, fill=WHITE, opacity=14)
+    text(s, 0.68, y, 2.2, 0.35, t, 14, WHITE, bold=True)
+    text(s, 2.95, y + 0.01, 4.95, 0.35, d, 13, GRAY)
 
-
-# El supervisor pidio enfocar el nivel I. Estas dos laminas son ese enfoque.
-s = new("Standard_Light", 6, dark=False)
-head(s, "LEVEL I IN DETAIL", "Nine topics, one exam, one passing mark",
-     "4 hours  ·  written exam  ·  minimum 8.0", dark=False)
-b = badge(s, 11.95, 0.86, 0.88, "I", NAVY, LIME, 32)
-b.name = "!!iluo_I"
-
-TEMAS = ["Welding safety", "GMAW equipment", "Metal transfer modes",
-         "Process variables", "GMAW discontinuities", "Joint geometry",
-         "Welding positions", "Welding symbols", "Welding control documents"]
-TW, TS, TH = 3.95, 4.19, 1.28
-for i, t in enumerate(TEMAS):
-    x = 0.5 + (i % 3) * TS
-    y = 2.3 + (i // 3) * 1.46
-    rect(s, x, y, TW, TH, fill=TINT)
-    tb, tf = txbox(s, x + 0.32, y + 0.2, TW - 0.64, 0.9)
-    para(tf, "%02d" % (i + 1), 15, BLUE, bold=True, first=True)
-    para(tf, t, 16, NAVY, bold=True, space_before=6, spacing=1.12)
-
-tb, tf = txbox(s, 0.5, 6.76, 12.33, 0.3)
-para(tf, "Twenty of the forty ILUO hours sit above this level, but none of "
-         "them open until this exam is passed.", 12.5, MUTED, first=True)
+glass(s, 8.55, 1.75, 4.50, 4.25, name="!! Glass B")
+label(s, 8.95, 2.08, "HOW I LEARNED IT")
+HOW = [("616", "pages of training manual and customer standard, read page "
+               "by page."),
+       ("Daily", "at the cells, attending robot stops with the technicians."),
+       ("25", "questions of a practice exam from previous years, solved.")]
+for k, (big, d) in enumerate(HOW):
+    y = 2.55 + k * 1.10
+    text(s, 8.95, y, 3.8, 0.5, big, 26, LIME, bold=True)
+    text(s, 8.95, y + 0.50, 3.75, 0.5, d, 12, GRAY)
 
 notes[5] = (
-    "My supervisor asked me to focus this review on level I, so here it is in "
-    "full. Nine topics, four hours, and a single written exam with a passing "
-    "mark of eight out of ten. Safety, equipment, transfer modes, process "
-    "variables, discontinuities, joint geometry, positions, symbols and "
-    "control documents. The reason this level matters more than it looks is "
-    "the line at the bottom: twenty of the forty hours in the whole matrix "
-    "sit above it, and none of them open until this exam is passed. Level I "
-    "is the gate.")
+    "Level I is about understanding before touching anything. It has five "
+    "topics. Safety, so nobody gets hurt around the cell. GMAW welding, which "
+    "is how the robot joins steel with wire, gas and an electric arc. The "
+    "WPS, the approved recipe every weld must follow. Defects, meaning how to "
+    "recognize a bad weld and what caused it. And parameters, the settings "
+    "that shape the weld and how far they are allowed to move. I learned it "
+    "from six hundred pages of material, a practice exam, and every day at "
+    "the cells.")
 
-# ============================================================ 7 · seguridad
-s = new("Standard_Light", 7, dark=False)
-head(s, "TOPIC 1 OF 9", "Protecting myself, and the person next to me",
-     "Welding safety, per ANSI Z49.1", dark=False)
+# ============================================================ 7 · progress
+s = slide("Four skills on my own, thirteen in progress",
+          "Progress on the 23 skills of the program")
+glass(s, 0.28, 1.75, 8.25, 4.25, name="!! Glass A")
+# (level, name, on my own, in progress, not started) - self assessment,
+# same source as the schedule in nivel-I/, plus the 4M improvement.
+ROWS = [("I", "Understands", 0, 9, 0),
+        ("L", "With support", 3, 2, 0),
+        ("U", "Alone", 0, 1, 2),
+        ("O", "Improves", 1, 1, 4)]
+D, DG = 0.26, 0.40
+for k, (lv, nm, own, wip, todo) in enumerate(ROWS):
+    y = 2.12 + k * 0.84
+    text(s, 0.68, y - 0.06, 0.5, 0.5, lv, 24, LIME, bold=True)
+    text(s, 1.22, y - 0.01, 2.2, 0.3, nm, 13, WHITE, bold=True)
+    text(s, 1.22, y + 0.26, 2.2, 0.3, "%d skills" % (own + wip + todo), 11,
+         DIM)
+    for j in range(own + wip + todo):
+        x = 3.45 + j * DG
+        if j < own:
+            rect(s, x, y + 0.06, D, D, fill=LIME, shape=MSO_SHAPE.OVAL)
+        elif j < own + wip:
+            rect(s, x, y + 0.06, D, D, fill=LIME, opacity=35, line=LIME,
+                 lw=1.25, shape=MSO_SHAPE.OVAL)
+        else:
+            rect(s, x, y + 0.06, D, D, line=GRAY, lw=1.0, line_opacity=60,
+                 shape=MSO_SHAPE.OVAL)
+# legend, inside the panel and clear of the chevrons
+LEG = [("On my own", dict(fill=LIME)),
+       ("In progress", dict(fill=LIME, opacity=35, line=LIME, lw=1.25)),
+       ("Not started", dict(line=GRAY, lw=1.0, line_opacity=60))]
+lx = 3.45
+for t, kw in LEG:
+    rect(s, lx, 5.52, 0.18, 0.18, shape=MSO_SHAPE.OVAL, **kw)
+    text(s, lx + 0.28, 5.49, 1.4, 0.25, t, 11, GRAY)
+    lx += 1.62
 
-SEG = [("RADIATION", "Screens, helmet and welder's clothing. Arc flash does "
-        "not spare the person who is only watching."),
-       ("FUMES AND GAS", "The biggest factor under my own control is where I "
-        "put my head relative to the fume column."),
-       ("COMPRESSED GAS", "Cylinders upright and secured, always. Cap on "
-        "before moving one."),
-       ("THE ROBOTIC CELL", "Emergency stops, interlocks, teach mode at "
-        "reduced speed, and lockout before anyone goes in.")]
-for i, (lbl, cuerpo) in enumerate(SEG):
-    x = 0.5 + i * CSTEP
-    rect(s, x, 2.3, CW, 2.7, fill=TINT)
-    tb, tf = txbox(s, x + 0.3, 2.62, CW - 0.6, 2.1)
-    para(tf, lbl, 9.5, BLUE, bold=True, first=True)
-    para(tf, cuerpo, 13.5, NAVY, space_before=12, spacing=1.2)
-
-rect(s, 0.5, 5.32, 12.33, 1.1, fill=NAVY)
-tb, tf = txbox(s, 0.92, 5.56, 11.5, 0.62, anchor=MSO_ANCHOR.MIDDLE)
-para(tf, "The cell safety column is the one neither of my two study documents "
-         "covers.", 16, LIME, bold=True, first=True)
+glass(s, 8.85, 1.75, 4.20, 4.25, name="!! Glass B")
+label(s, 9.25, 2.08, "ON MY OWN TODAY")
+DONE = ["Changing consumables",
+        "Adjusting the key welding settings",
+        "Reading weld symbols on drawings",
+        "Closing ANDON calls"]
+for k, t in enumerate(DONE):
+    y = 2.62 + k * 0.72
+    rect(s, 9.25, y + 0.09, 0.14, 0.14, fill=LIME, shape=MSO_SHAPE.CHEVRON)
+    text(s, 9.55, y, 3.3, 0.6, t, 14, WHITE)
+text(s, 9.25, 5.45, 3.6, 0.3, "Level I: exam still pending.", 12, LIME,
+     bold=True)
 
 notes[6] = (
-    "Safety, per ANSI Z49.1. The arc flash does not care whether you are "
-    "welding or watching, which is why the screens matter as much as the "
-    "helmet. On fumes, the biggest factor I actually control is where I put "
-    "my head relative to the column. And the fourth card is the cell itself, "
-    "which neither of my two documents covers, so I had to build it myself.")
-# ============================================================ 8 · equipo MIG
-s = new("Standard_Light", 8, dark=False)
-head(s, "TOPICS 2 AND 4 OF 9", "Five blocks, and the four that wear out",
-     "GMAW equipment and process variables", dark=False)
+    "This is my honest status on the twenty three skills of the program. "
+    "Four I already do on my own: changing consumables, adjusting the key "
+    "welding settings, reading weld symbols on drawings, and closing ANDON "
+    "calls. Thirteen are in progress, including all of Level I, which I have "
+    "studied completely but still have to prove in the exam. Six have not "
+    "started yet, most of them in the top level. The 4M improvement counts "
+    "here too: it is my first step in the improvement skill.")
 
-rect(s, 0.5, 2.28, 6.02, 3.0, fill=TINT)
-tb, tf = txbox(s, 0.86, 2.58, 5.3, 2.4)
-para(tf, "THE EQUIPMENT", 9.5, BLUE, bold=True, first=True)
-for it in ("Power source, constant voltage, DCEP",
-           "Wire feeder and drive rolls", "Torch", "Gas supply and flowmeter",
-           "Work lead"):
-    para(tf, it, 13.5, NAVY, space_before=13)
+# ============================================================ 8 · industrialization
+s = slide("Most of my time goes to industrialization",
+          "How my time is split")
+glass(s, 0.28, 1.75, 5.20, 4.25, name="!! Glass A")
+text(s, 0.68, 2.00, 4.4, 0.9, "60%", 54, LIME, bold=True)
+text(s, 0.68, 2.95, 4.4, 0.6, "Industrialization project, with Engineering",
+     14, WHITE, bold=True)
+rect(s, 0.68, 3.75, 4.40, 0.16, fill=GRAY, opacity=30)
+rect(s, 0.68, 3.75, 4.40 * 0.6, 0.16, fill=LIME)
+text(s, 0.68, 4.25, 4.4, 0.6, "40%", 30, WHITE, bold=True)
+tb, tf = txbox(s, 0.68, 4.85, 4.4, 0.9)
+para(tf, "Support at the robotic cells: stops, adjustments and ANDON calls.",
+     12, GRAY, first=True)
 
-rect(s, 6.81, 2.28, 6.02, 3.0, fill=NAVY)
-tb, tf = txbox(s, 7.17, 2.58, 5.3, 2.4)
-para(tf, "WHAT I CHANGE MYSELF", 9.5, LIME, bold=True, first=True)
-for it in ("Contact tip", "Nozzle", "Diffuser", "Liner", "Drive rolls"):
-    para(tf, it, 13.5, WHITE, space_before=13)
-
-rect(s, 0.5, 5.6, 12.33, 1.16, fill=LIME)
-tb, tf = txbox(s, 0.92, 5.86, 11.5, 0.66, anchor=MSO_ANCHOR.MIDDLE)
-para(tf, "There is no amperage knob. I set wire feed speed and voltage, and "
-         "the current follows.", 18, NAVY, bold=True, first=True)
+glass(s, 5.80, 1.75, 7.25, 4.25, name="!! Glass B")
+label(s, 6.20, 2.08, "WHAT INDUSTRIALIZATION MEANS")
+tb, tf = txbox(s, 6.20, 2.52, 6.45, 1.2)
+para(tf, "Getting a new process ready to run on the floor: equipment, "
+     "programs, trials and the release to production.", 15, WHITE,
+     first=True, spacing=1.1)
+lime_rule(s, 6.20, 3.85)
+label(s, 6.20, 4.08, "MY PART")
+tb, tf = txbox(s, 6.20, 4.50, 6.45, 1.3)
+para(tf, "[Project in one line: the product or line being industrialized.]",
+     13, GRAY, italic=True, first=True)
+para(tf, "[What I do in it, in one or two short phrases.]", 13, GRAY,
+     italic=True, space_before=6)
 
 notes[7] = (
-    "Equipment and variables together, because on the floor they are one "
-    "conversation. Five blocks; four of them wear out and I change them "
-    "myself, which is the level L skill I already own. The bottom line took "
-    "me longest to understand. There is no amperage knob on a MIG feeder. "
-    "The source holds the voltage, I set wire feed speed, and the current "
-    "comes out of that. Once that clicked, adjusting a cell stopped being "
-    "guesswork.")
-# ============================================================ 9 · TIG
-s = new("Standard_Dark", 9, dark=True)
-head(s, "THE OTHER MANUAL PROCESS", "TIG, where nothing about MIG applies",
-     "The plant runs two manual processes, and they share almost no parts",
-     dark=True)
+    "About sixty percent of my time goes to an industrialization project "
+    "with Engineering. Industrialization means getting a new process ready to "
+    "run on the floor: the equipment, the programs, the trials and the "
+    "release to production. [Add one or two sentences on the project and your "
+    "role.] The other forty percent is support at the robotic cells, and "
+    "that is where most of my hands-on learning comes from.")
 
-TIGC = [("NON-CONSUMABLE ELECTRODE",
-         "Tungsten only holds the arc. Filler goes in by hand, as a rod."),
-        ("100 % ARGON", "Any CO₂ would consume the tungsten. 15 to 25 CFH, "
-         "read on the flowmeter and nowhere else."),
-        ("ITS OWN CONSUMABLES",
-         "Collet, collet body, cup and back cap. None of the MIG set fits.")]
-for i, (lbl, cuerpo) in enumerate(TIGC):
-    x = 0.5 + i * SS3
-    rect(s, x, 2.28, SW3, 2.6, fill=CARD)
-    tb, tf = txbox(s, x + 0.36, 2.6, SW3 - 0.72, 2.0)
-    para(tf, lbl, 9.5, LIME, bold=True, first=True)
-    para(tf, cuerpo, 13.5, GRAYL, space_before=12, spacing=1.2)
-
-rect(s, 0.5, 5.2, 12.33, 1.16, fill=CARD)
-tb, tf = txbox(s, 0.92, 5.44, 11.5, 0.7, anchor=MSO_ANCHOR.MIDDLE)
-para(tf, "A tungsten that touches the pool is cut back and reground, never "
-         "cleaned.", 17, WHITE, bold=True, first=True)
+# ============================================================ 9 · problem
+s = slide("A long, uncomfortable weld, done by hand",
+          "Improvement  |  The starting point")
+glass(s, 0.28, 1.75, 6.35, 4.25, name="!! Glass A")
+label(s, 0.68, 2.08, "THE STARTING POINT")
+text(s, 0.68, 2.52, 5.6, 0.7, "One process ran in a manual welding booth.",
+     17, WHITE)
+PAIN = [("Time", "Long welds made every part slow to finish."),
+        ("The team member", "Uncomfortable positions, held for a long time, "
+                            "part after part.")]
+for k, (t, d) in enumerate(PAIN):
+    y = 3.35 + k * 0.92
+    rect(s, 0.68, y + 0.07, 0.16, 0.16, fill=LIME, shape=MSO_SHAPE.CHEVRON)
+    text(s, 1.00, y, 5.3, 0.3, t, 14, WHITE, bold=True)
+    text(s, 1.00, y + 0.32, 5.3, 0.5, d, 13, GRAY)
+text(s, 0.68, 5.40, 5.6, 0.35, "The idea: let a robot do it.", 15, LIME,
+     bold=True)
+photo(s, 6.98, 1.75, 6.07, 4.25, "Manual welding booth", "!! Glass B")
 
 notes[8] = (
-    "The plant runs two manual processes, and almost nothing carries over "
-    "from MIG to TIG. The tungsten does not melt, it only holds the arc. The "
-    "gas is pure argon, because any carbon dioxide would eat the tungsten, "
-    "and the flow is read on the flowmeter, never on the tank gauge. The "
-    "consumables are a different set entirely. And a contaminated tungsten is "
-    "cut back and reground, not cleaned.")
-# ============================================================ 10 · transferencia
-s = new("Standard_Light", 10, dark=False)
-head(s, "TOPIC 3 OF 9", "How the metal crosses the arc",
-     "Four transfer modes, and what picks between them", dark=False)
+    "Now the improvement. It started with one process that ran in a manual "
+    "welding booth. The welds on this part were long, so every part took a "
+    "long time. And for the team member it was hard work: uncomfortable "
+    "positions, held for a long time, part after part. My supervisor and I "
+    "asked a simple question: why is a person doing the longest and hardest "
+    "weld, when we have robots that can do it?")
 
-MODOS = [("SHORT CIRCUIT", "Low current", "The wire touches the work. Lowest "
-          "heat, for thin sheet. Its risk is lack of fusion."),
-         ("GLOBULAR", "Mid current", "Large drops fall by gravity. Heavy "
-          "spatter, so we avoid it."),
-         ("SPRAY", "High current", "Fine droplets, no contact. Needs at least "
-          "80 % argon. Flat and horizontal only."),
-         ("PULSED", "Controlled", "The source alternates high and low. Spray "
-          "quality at low heat input.")]
-for i, (lbl, cur, cuerpo) in enumerate(MODOS):
-    x = 0.5 + i * CSTEP
-    rect(s, x, 2.3, CW, 2.84, fill=TINT)
-    tb, tf = txbox(s, x + 0.3, 2.6, CW - 0.6, 2.3)
-    para(tf, lbl, 9.5, BLUE, bold=True, first=True)
-    para(tf, cur, 15, NAVY, bold=True, space_before=8)
-    para(tf, cuerpo, 12.5, MUTED, space_before=10, spacing=1.2)
-
-rect(s, 0.5, 5.46, 12.33, 1.1, fill=NAVY)
-tb, tf = txbox(s, 0.92, 5.7, 11.5, 0.62, anchor=MSO_ANCHOR.MIDDLE)
-para(tf, "Changing the transfer mode is an essential variable. It invalidates "
-         "the procedure.", 16, LIME, bold=True, first=True)
+# ============================================================ 10 · the change
+s = slide("From the manual booth to the 4M robotic cell",
+          "Improvement  |  What we did")
+STEPS = [("01", "Study the part",
+          "Which welds, how long they take, and what made them hard."),
+         ("02", "Move it to 4M",
+          "Bring the part into the automatic cell."),
+         ("03", "Program and adjust",
+          "Robot path and welding settings, until the weld is right."),
+         ("04", "Validate and release",
+          "Check weld quality, then hand it over to production.")]
+for i, (n, t, d) in enumerate(STEPS):
+    x = 0.28 + i * (CW + CG)
+    glass(s, x, 1.85, CW, 3.10, name="!! Card %d" % (i + 1))
+    text(s, x + 0.34, 2.15, CW - 0.6, 0.55, n, 30, LIME, bold=True)
+    text(s, x + 0.34, 2.85, CW - 0.6, 0.7, t, 16, WHITE, bold=True)
+    tb, tf = txbox(s, x + 0.34, 3.67, CW - 0.62, 1.2)
+    para(tf, d, 12, GRAY, first=True, spacing=1.1)
+    if i < 3:
+        rect(s, x + CW + 0.07, 3.30, 0.16, 0.16, fill=LIME,
+             shape=MSO_SHAPE.CHEVRON)
+glass(s, 0.28, 5.30, 12.77, 0.66, name="!! Strip")
+text(s, 0.62, 5.52, 2.2, 0.25, "TEAMWORK", 11, LIME, bold=True)
+text(s, 2.75, 5.50, 10.0, 0.3, "Designed and implemented together with my "
+     "supervisor, from the idea to the release.", 12, WHITE)
 
 notes[9] = (
-    "How the metal crosses the arc. Four modes, and the thing to hold on to "
-    "is that short circuit is the low-heat one for thin sheet, and spray is "
-    "the high-current one that needs at least eighty percent argon. The "
-    "bottom line is the commercial part: changing the mode is an essential "
-    "variable, so it invalidates the procedure.")
-# ============================================================ 11 · plano
-s = new("Standard_Light", 11, dark=False)
-head(s, "TOPICS 6, 7 AND 8 OF 9", "Reading the print: joint, position, symbol",
-     "Three short topics that always travel together", dark=False)
+    "This is how we did it, in four steps. First, we studied the part: which "
+    "welds, how long they took, and what made them hard. Second, we moved the "
+    "part into the 4M cell, which is an automatic welding cell. Third, we "
+    "programmed the robot and adjusted the welding settings until the weld "
+    "was right. And fourth, we checked the weld quality and released it to "
+    "production. I did this together with my supervisor, from the idea to "
+    "the release.")
 
-PLANO = [("JOINT GEOMETRY",
-          "Butt, lap, T, corner and edge. The throat is what carries the "
-          "load, not the leg."),
-         ("POSITIONS",
-          "1G to 4G for groove welds, 1F to 4F for fillet welds. Cummins adds "
-          "P for plug and S for slot."),
-         ("SYMBOLS",
-          "AWS A2.4 by default. Arrow side goes below the reference line, the "
-          "other side above.")]
-for i, (lbl, cuerpo) in enumerate(PLANO):
-    x = 0.5 + i * SS3
-    rect(s, x, 2.3, SW3, 2.5, fill=TINT)
-    tb, tf = txbox(s, x + 0.36, 2.62, SW3 - 0.72, 1.9)
-    para(tf, lbl, 9.5, BLUE, bold=True, first=True)
-    para(tf, cuerpo, 14, NAVY, space_before=12, spacing=1.2)
+# ============================================================ 11 · before / after
+s = slide("Same part, less time, less strain", "Improvement  |  Results")
+glass(s, 0.28, 1.80, 6.15, 2.75, tone="gray", name="!! Glass A")
+text(s, 0.70, 2.20, 5.3, 0.3, "BEFORE  |  MANUAL BOOTH", 11, GRAY, bold=True)
+text(s, 0.70, 2.72, 5.3, 0.8, "XX min", 36, WHITE, bold=True)
+text(s, 0.70, 3.62, 5.3, 0.3, "per part, welded by hand", 12, GRAY)
 
-rect(s, 0.5, 5.12, 12.33, 1.3, fill=NAVY)
-tb, tf = txbox(s, 0.92, 5.4, 11.5, 0.8, anchor=MSO_ANCHOR.MIDDLE)
-para(tf, "Our prints carry two things AWS does not: the weld class and the "
-         "WDR, both in the tail of the symbol.", 16, LIME, bold=True,
-     first=True, spacing=1.16)
-para(tf, "If no class is marked, it is Class 2 by default.", 12.5, GRAYL,
-     space_before=8)
+after = rect(s, 6.90, 1.80, 6.15, 2.75, fill=LIME, opacity=66,
+             shape=MSO_SHAPE.ROUNDED_RECTANGLE, name="!! Glass B")
+after.adjustments[0] = 0.06
+text(s, 7.32, 2.20, 5.3, 0.3, "AFTER  |  4M ROBOTIC CELL", 11, NAVY,
+     bold=True)
+text(s, 7.32, 2.72, 5.3, 0.8, "XX min", 36, NAVY, bold=True)
+text(s, 7.32, 3.62, 5.3, 0.3, "per part, welded by the robot", 12, NAVY)
+
+KPI = [("XX%", "less process time per part"),
+       ("XX", "welds moved from the booth to the robot"),
+       ("XX min", "of uncomfortable welding removed per shift")]
+for i, (big, lab) in enumerate(KPI):
+    x = 0.28 + i * 4.37
+    text(s, x, 4.95, 4.0, 0.6, big, 32, LIME, bold=True)
+    text(s, x, 5.62, 3.9, 0.4, lab, 12, GRAY)
 
 notes[10] = (
-    "Three short topics that travel together, because you meet all three on "
-    "the same print. The throat carries the load, not the leg. Positions one "
-    "through four, G for groove and F for fillet. And on the symbol, the rule "
-    "people get backwards: arrow side goes below the reference line. What is "
-    "ours is the bottom line: our prints carry the weld class and the WDR in "
-    "the tail, and with no class marked it is class two by default.")
-# ============================================================ 12 · discontinuidades
-s = new("Standard_Dark", 12, dark=True)
-head(s, "TOPICS 5 AND 9 OF 9",
-     "A defect is a discontinuity that went too far",
-     "Discontinuities, acceptance limits and the documents that set them",
-     dark=True)
+    "And these are the results. Before, in the manual booth, each part took "
+    "XX minutes. Now, in the 4M cell, it takes XX minutes. That is XX percent "
+    "less process time. XX welds moved from a person to the robot, and the "
+    "team member no longer spends XX minutes per shift in uncomfortable "
+    "positions. For me, this is the part I am proudest of: the process got "
+    "faster, and a person’s work got better at the same time.")
 
-rect(s, 0.5, 2.28, 6.02, 2.9, fill=CARD)
-tb, tf = txbox(s, 0.86, 2.56, 5.3, 2.3)
-para(tf, "WHAT WE SEE IN THE CELL", 9.5, LIME, bold=True, first=True)
-for it in ("Porosity, from poor gas coverage",
-           "Undercut, from too much current or speed",
-           "Lack of fusion, from too little heat",
-           "Spatter, burn-through, cracks"):
-    para(tf, it, 13.5, WHITE, space_before=13)
-
-rect(s, 6.81, 2.28, 6.02, 2.9, fill=CARD)
-tb, tf = txbox(s, 7.17, 2.56, 5.3, 2.3)
-para(tf, "WHAT SETS THE LIMIT", 9.5, LIME, bold=True, first=True)
-for it in ("The weld class on the print, 1, 2 or 3",
-           "Class 1 allows no undercut at all",
-           "Cracks are never allowed, in any class",
-           "The WPS is the control plan"):
-    para(tf, it, 13.5, WHITE, space_before=13)
-
-rect(s, 0.5, 5.5, 12.33, 1.1, fill=LIME)
-tb, tf = txbox(s, 0.92, 5.74, 11.5, 0.62, anchor=MSO_ANCHOR.MIDDLE)
-para(tf, "The same bead passes in Class 3 and fails in Class 1.", 18, NAVY,
-     bold=True, first=True)
+# ============================================================ 12 · training update
+s = slide("What I would change in how setters learn",
+          "Final project  |  Training process update, a proposal")
+TRAIN = [("01", "Reviewed",
+          "616 pages of training manual and customer standard, page by page, "
+          "against what Level I asks."),
+         ("02", "Found",
+          "Gaps: topics the exam asks about that the material barely covers, "
+          "and an error in one key table."),
+         ("03", "Rebuilt",
+          "The schedule, in the plant’s own format, so plan and reality can "
+          "be compared week by week.")]
+for i, (n, t, d) in enumerate(TRAIN):
+    x = 0.28 + i * 4.37
+    glass(s, x, 1.85, 4.05, 3.35, name="!! Card %d" % (i + 1))
+    text(s, x + 0.36, 2.15, 3.3, 0.55, n, 30, LIME, bold=True)
+    text(s, x + 0.36, 2.90, 3.3, 0.35, t, 16, WHITE, bold=True)
+    tb, tf = txbox(s, x + 0.36, 3.40, 3.33, 1.6)
+    para(tf, d, 12, GRAY, first=True, spacing=1.1)
+glass(s, 0.28, 5.42, 12.77, 0.62, name="!! Strip")
+text(s, 0.62, 5.62, 2.2, 0.25, "PROPOSAL", 11, LIME, bold=True)
+text(s, 2.75, 5.60, 10.0, 0.3, "Use the corrected material and the new "
+     "schedule with the next group of setters.", 12, WHITE)
 
 notes[11] = (
-    "These two topics are meaningless apart. On the left, what we see in the "
-    "cell and what causes it. On the right, what decides whether it is "
-    "acceptable, and it is not my opinion: it is the weld class on the print. "
-    "Class one allows no undercut at all, and cracks are never allowed in any "
-    "class. The whole idea is the bottom line: the same bead passes in class "
-    "three and fails in class one.")
-# ============================================================ 13 · numeros
-s = new("Standard_Dark", 13, dark=True)
-head(s, "WHAT THE CUSTOMER ADDS",
-     "The customer turns that theory into numbers",
-     "From the Cummins standard for aftertreatment and exhaust parts",
-     dark=True)
+    "The second half of the final project is the training process. I read "
+    "the full training material, more than six hundred pages including the "
+    "customer standard, and compared it with what Level I asks. I found "
+    "gaps: for example, the practice exam spends eight of its twenty five "
+    "questions on TIG welding, which the skill matrix does not mention. I "
+    "also found an error in one of the key tables. And I rebuilt the training "
+    "schedule in the plant format, so we can compare the plan with what "
+    "really happened. My proposal is to use both with the next group.")
 
-CIFRAS = [("± 5 %", "wire feed speed, current and voltage"),
-          ("± 10 %", "travel speed"),
-          ("10 – 16 mm", "contact tip to work distance, every GMAW weld")]
-for i, (big, lbl) in enumerate(CIFRAS):
-    x = 0.5 + i * SS3
-    rect(s, x, 2.26, SW3, 2.34, fill=CARD)
-    tb, tf = txbox(s, x + 0.36, 2.6, SW3 - 0.72, 1.7)
-    para(tf, big, 34, LIME, bold=True, first=True)
-    para(tf, lbl, 14, GRAYL, space_before=14, spacing=1.2)
+# ============================================================ 13 · next
+s = slide("Next: from knowing it to doing it alone",
+          "What comes next, until January")
+glass(s, 0.28, 1.75, 7.90, 4.25, name="!! Glass A")
+label(s, 0.68, 2.08, "NEXT LEVELS")
+NEXT = [("L", "Validate settings and find defects at the cell, with support.",
+         "November"),
+        ("U", "Create and set up robot programs on my own (SKS).",
+         "December"),
+        ("O", "Solve problems, share what I learn, keep improving.",
+         "Already started with 4M")]
+for k, (lv, d, when) in enumerate(NEXT):
+    y = 2.62 + k * 1.05
+    if k:
+        rect(s, 0.68, y - 0.18, 7.10, 0.01, fill=WHITE, opacity=14)
+    text(s, 0.68, y - 0.04, 0.5, 0.5, lv, 24, LIME, bold=True)
+    text(s, 1.25, y, 6.5, 0.35, d, 14, WHITE)
+    text(s, 1.25, y + 0.36, 6.5, 0.3, when, 12, GRAY)
 
-rect(s, 0.5, 4.92, 12.33, 1.24, fill=LIME)
-tb, tf = txbox(s, 0.92, 5.2, 11.5, 0.7, anchor=MSO_ANCHOR.MIDDLE)
-para(tf, "Outside the band, the procedure has to be revalidated.", 20, NAVY,
-     bold=True, first=True)
-
-tb, tf = txbox(s, 0.5, 6.44, 12.33, 0.3)
-para(tf, "Source: CES-S-MANF-150, sections 9 and 13.", 11, MUTEDD, first=True)
+glass(s, 8.55, 1.75, 4.50, 4.25, name="!! Glass B")
+label(s, 8.95, 2.08, "WHAT I NEED")
+NEED = ["A date for my Level I exam",
+        "Supervised time programming robots in SKS",
+        "Your feedback on the training proposal"]
+for k, t in enumerate(NEED):
+    y = 2.62 + k * 0.80
+    rect(s, 8.95, y + 0.09, 0.14, 0.14, fill=LIME, shape=MSO_SHAPE.CHEVRON)
+    text(s, 9.25, y, 3.55, 0.7, t, 14, WHITE)
 
 notes[12] = (
-    "And this is what the customer standard adds on top of all of it. Our "
-    "matrix says adjust the essential variables. It does not say by how much. "
-    "Cummins does. Wire feed speed, current and voltage within five percent. "
-    "Travel speed within ten. Contact tip to work distance between ten and "
-    "sixteen millimetres on every GMAW weld, no matter the transfer mode. Go "
-    "outside those bands and the procedure has to be revalidated. That is the "
-    "difference between adjusting a machine and running a qualified process.")
-# ============================================================ 14 · preparacion
+    "What comes next. In November, Level L: validating settings and finding "
+    "defects at the cell, with support. In December, Level U: creating and "
+    "setting up robot programs on my own. Level O, solving problems and "
+    "improving, already started with 4M. To get there I need three things: "
+    "a date for my Level I exam, supervised time programming robots, and "
+    "your feedback on the training proposal.")
 
-
-s = new("Standard_Dark", 14, dark=True)
-head(s, "HOW I AM PREPARING",
-     "616 pages, and five gaps neither of them closes", None, dark=True)
-
-FUENTES = [("CWI MANUAL, COMIMSA", "440 pages",
-            "Covers five of the nine topics well: symbols, joint geometry, "
-            "discontinuities, positions and safety."),
-           ("CES-S-MANF-150, CUMMINS", "176 pages",
-            "Turns that theory into numbers I can be held to: essential "
-            "variables, work angle, CTWD, acceptance limits.")]
-y = 1.9
-for titulo, vol, cuerpo in FUENTES:
-    rect(s, 0.5, y, 7.3, 2.24, fill=CARD)
-    tb, tf = txbox(s, 0.86, y + 0.3, 6.6, 1.7)
-    para(tf, titulo, 10, MUTEDD, bold=True, first=True)
-    para(tf, vol, 26, LIME, bold=True, space_before=6)
-    para(tf, cuerpo, 13, GRAYL, space_before=10, spacing=1.2)
-    y += 2.44
-
-rect(s, 8.14, 1.9, 4.69, 4.44, fill=CARD)
-tb, tf = txbox(s, 8.5, 2.2, 4.0, 3.8)
-para(tf, "WHAT NEITHER ONE COVERS", 10, LIME, bold=True, first=True)
-for hueco in ("Robotic cell safety", "Constant voltage V-A curve",
-              "Transition current", "ISO 2553 symbols",
-              "The Tenneco parameter sheet"):
-    para(tf, hueco, 14, WHITE, space_before=20)
-
-tb, tf = txbox(s, 0.5, 6.62, 12.33, 0.34)
-para(tf, "I mapped both documents page by page. The gaps are mine to close, "
-         "and I know exactly what they are.", 15, LIME, bold=True, first=True)
+# ============================================================ 14 · conclusions
+s = slide("Conclusions and next steps", "What is in place, and what comes next")
+glass(s, 0.28, 1.75, 6.35, 4.05, name="!! Glass A")
+label(s, 0.68, 2.08, "IN PLACE")
+INPLACE = ["Level I studied in full, and four skills done on my own.",
+           "A manual weld moved to the 4M robotic cell: less time, less "
+           "strain.",
+           "A reviewed study path, and a schedule that shows plan versus "
+           "reality."]
+glass(s, 6.98, 1.75, 6.07, 4.05, name="!! Glass B")
+label(s, 7.38, 2.08, "NEXT")
+NEXTS = ["Pass the Level I exam in October.",
+         "Reach Levels L and U before January.",
+         "Keep measuring 4M, and find the next weld to automate."]
+for x, items, w in ((0.68, INPLACE, 5.55), (7.38, NEXTS, 5.27)):
+    for k, t in enumerate(items):
+        text(s, x, 2.62 + k * 1.00, w, 0.8, t, 14, WHITE)
+text(s, 3.40, 6.25, 9.6, 0.4, "I came to learn robotic welding, and I am "
+     "already improving it.", 15, LIME, bold=True)
 
 notes[13] = (
-    "I did not just receive the material, I audited it. Six hundred and "
-    "sixteen pages between the two. The COMIMSA manual is a welding inspector "
-    "course, so it is excellent at what you look at and measure: symbols, "
-    "joint geometry, discontinuities, positions. The Cummins standard is the "
-    "other half. It takes that theory and puts numbers on it that we are "
-    "contractually held to. For example, our matrix says adjust the essential "
-    "variables. The standard says wire feed speed, current and voltage within "
-    "five percent, travel speed within ten, or the procedure has to be "
-    "revalidated. And then the panel on the right is what I found missing in "
-    "both, including robotic cell safety, which neither document mentions "
-    "once. Those five are mine to close, and I already know what they are.")
+    "To close. In place today: Level I studied in full, four skills I do on "
+    "my own, a manual weld moved to the 4M cell with less time and less "
+    "strain, and a reviewed training path. Next: pass the Level I exam in "
+    "October, reach Levels L and U before January, and keep measuring 4M "
+    "while we look for the next weld to automate. I came here to learn "
+    "robotic welding, and I am already improving it.")
 
-# ============================================================ 15 · scorecard
+# ============================================================ 15 · closing
+s = prs.slides.add_slide(layouts["Closing Slide"])
+for p_ in list(s.placeholders):
+    p_.element.getparent().remove(p_.element)
+text(s, 0.0, 5.15, SW, 0.7, "Thank you", 30, WHITE, bold=True,
+     align=PP_ALIGN.CENTER, name="!! Title 1")
+text(s, 0.0, 5.95, SW, 0.25, "Diego Adair de León Márquez   |   Engineering "
+     "Department", 13, GRAY, align=PP_ALIGN.CENTER)
 
-
-s = new("Standard_Light", 15, dark=False)
-head(s, "WHERE I STAND TODAY",
-     "Four skills unsupervised, none of them validated", None, dark=False)
-
-rows = [("I", "Welding fundamentals",  [S_WIP] * 9),
-        ("L", "Execution in the cell", [S_DONE, S_DONE, S_DONE, S_WIP, S_WIP]),
-        ("U", "Robot programming",     [S_WIP, S_NOT, S_NOT]),
-        ("O", "Teach and improve",     [S_DONE] + [S_NOT] * 5)]
-cw, ch, cg = 0.44, 0.36, 0.09
-y = 2.42
-for letter, label, states in rows:
-    b = badge(s, 0.5, y - 0.04, 0.44, letter, NAVY, LIME, 15)
-    b.name = "!!iluo_%s" % letter          # morphs in from the previous slide
-    tb, tf = txbox(s, 1.06, y + 0.06, 2.1, 0.3)
-    para(tf, label, 12, NAVY, bold=True, first=True)
-    bx = 3.3
-    for st in states:
-        rect(s, bx, y, cw, ch, fill=FILL[st])
-        bx += cw + cg
-    y += 0.7
-
-lx = 3.3
-for lbl, st in (("Unsupervised", S_DONE), ("In progress", S_WIP),
-                ("Not started", S_NOT)):
-    rect(s, lx, 5.34, 0.2, 0.2, fill=FILL[st])
-    tb, tf = txbox(s, lx + 0.3, 5.31, 1.6, 0.26)
-    para(tf, lbl, 10.5, MUTED, first=True)
-    lx += 1.6
-
-rect(s, 8.72, 2.26, 4.11, 2.92, fill=TINT)
-tb, tf = txbox(s, 9.04, 2.58, 3.47, 2.3)
-para(tf, "WHAT I DO UNSUPERVISED", 9.5, BLUE, bold=True, first=True)
-for it in ("Consumable changes", "Essential variable adjustment",
-           "Welding symbol interpretation", "Closing ANDON orders"):
-    para(tf, it, 14, NAVY, space_before=18)
-
-rect(s, 0.5, 5.86, 12.33, 1.06, fill=NAVY)
-tb, tf = txbox(s, 0.92, 6.1, 11.5, 0.62, anchor=MSO_ANCHOR.MIDDLE)
-para(tf, "I learned Level I in the cell, not in a classroom. The exam has not "
-         "happened, so nothing is validated yet.", 15, WHITE, first=True,
-     spacing=1.16)
-
-notes[14] = (
-    "Each square is one skill. Four of the twenty three I execute with nobody "
-    "standing next to me: consumable changes, which means contact tip, liner, "
-    "nozzle, diffuser and rollers; essential variable adjustment, so current, "
-    "wire feed, voltage and travel speed; reading welding symbols; and closing "
-    "ANDON orders. Twelve are in progress. Seven I have not started. And then "
-    "the line at the bottom, which is the part I want to be direct about. I "
-    "know the level I content because I picked it up in the cell, but the "
-    "theory session and the exam have not happened, so formally I am validated "
-    "at zero. I am not going to hide that.")
-
-# ============================================================ 16 · lo que sigue
-
-s = new("Standard_Light", 16, dark=False)
-head(s, "WHAT COMES NEXT", "Three levels ahead, and what each one asks",
-     None, dark=False)
-
-SIGUE = [("L", "Execution in the cell",
-          "Validate parameters against the WPS and adjust the essential "
-          "variables on my own.", "Validation on the floor"),
-         ("U", "Robot programming",
-          "Create a welding program in SKS and assign its parameters.",
-          "Practical exam"),
-         ("O", "Teach and improve",
-          "Train a level 2 or 3 technician and take one improvement idea to "
-          "implementation.", "Implementation review")]
-for i, (letra, nombre, objetivo, puerta) in enumerate(SIGUE):
-    x = 0.5 + i * SS3
-    rect(s, x, 2.2, SW3, 3.3, fill=NAVY)
-    b = badge(s, x + 0.36, 2.52, 0.78, letra, LIME, NAVY, 28)
-    b.name = "!!iluo_%s" % letra
-    tb, tf = txbox(s, x + 0.36, 3.54, SW3 - 0.72, 1.7)
-    para(tf, nombre, 18, WHITE, bold=True, first=True)
-    para(tf, objetivo, 13, GRAYL, space_before=10, spacing=1.2)
-    para(tf, puerta, 12, LIME, bold=True, space_before=14)
-
-rect(s, 0.5, 5.82, 12.33, 1.1, fill=TINT)
-tb, tf = txbox(s, 0.92, 6.06, 11.5, 0.62, anchor=MSO_ANCHOR.MIDDLE)
-para(tf, "Twenty of the forty hours live in these three levels, and none of "
-         "them open until Level I is signed.", 16, NAVY, bold=True, first=True)
-
-notes[15] = (
-    "And this is where I am going. Level L is execution: validating parameters "
-    "against the WPS and adjusting the essential variables without anyone "
-    "standing next to me, closed by a validation on the floor. Level U is "
-    "programming: building a welding program in SKS and assigning its "
-    "parameters, closed by a practical exam. Level O is multiplying: training "
-    "a level two or three technician and taking one improvement idea all the "
-    "way to implementation. Twenty of the forty hours in the whole matrix live "
-    "in these three. And the line at the bottom is why level I matters so "
-    "much: none of them open until it is signed.")
-
-# ============================================================ 17 · integration
-
-
-s = new("Standard_Light", 17, dark=False)
-head(s, "THE INTEGRATION PROJECT", "60% of my hours, and none of it on the matrix",
-     None, dark=False)
-y = 2.4
-for lbl, val in [("WHAT IT IS",        "[ describe the integration in one line ]"),
-                 ("MY ROLE",           "[ what you own day to day ]"),
-                 ("WHAT IT TAUGHT ME", "[ three skills outside the matrix ]"),
-                 ("STATUS",            "[ % complete, next milestone ]")]:
-    rect(s, 0.5, y, 8.0, 1.0, fill=TINT)
-    tb, tf = txbox(s, 0.9, y + 0.22, 2.5, 0.56, anchor=MSO_ANCHOR.MIDDLE)
-    para(tf, lbl, 10, BLUE, bold=True, first=True)
-    tb, tf = txbox(s, 3.5, y + 0.22, 4.7, 0.56, anchor=MSO_ANCHOR.MIDDLE)
-    para(tf, val, 14, NAVY, first=True)
-    y += 1.14
-
-# imagen generica del template: Diego la cambia por una foto de la integracion
-img(s, "carretera.jpg", 8.8, 2.4, w=4.03)
-rect(s, 8.8, 4.26, 4.03, 2.3, fill=NAVY)
-tb, tf = txbox(s, 9.14, 4.56, 3.35, 1.8)
-para(tf, "WHY IT BELONGS HERE", 9.5, LIME, bold=True, first=True)
-para(tf, "It is real engineering work. It simply does not appear anywhere on "
-         "the ILUO matrix, so the scorecard cannot see it.",
-     12.5, GRAYL, space_before=10, spacing=1.18)
-
-notes[16] = (
-    "This is the project that took most of my time, and I worked on it "
-    "directly with my engineering lead. Explain it here in your own words: "
-    "what the integration is, what you own day to day, what it taught you that "
-    "is not welding, and where it stands right now. Keep it to about ninety "
-    "seconds. The reason it belongs in this presentation is simple. It is real "
-    "engineering work. It just does not appear anywhere on the ILUO matrix, so "
-    "the scorecard you saw two slides ago cannot see it.")
-
-# ============================================================ 18 · gantt
-
-
-s = new("Standard_Light", 18, dark=False)
-head(s, "TIMELINE", "14 weeks left, and Levels U and O are still ahead",
-     "August 1, 2026  →  January 1, 2027", dark=False)
-
-GX, GW, GY, GH = 3.62, 9.2, 2.68, 3.66
-mw = GW / 5.0
-def at(month):                      # 0.0 = Aug 1, 5.0 = Jan 1
-    return GX + month * mw
-
-for i, m in enumerate(["AUG", "SEP", "OCT", "NOV", "DEC"]):
-    tb, tf = txbox(s, at(i), GY - 0.32, mw, 0.24, align=PP_ALIGN.CENTER)
-    para(tf, m, 10, MUTED, bold=True, first=True)
-    if i:
-        rect(s, at(i), GY - 0.04, 0.008, GH, fill=RGBColor(0xE6, 0xEA, 0xEC))
-
-TODAY = 1.8                         # September 25
-by, bh = GY + 0.22, 0.42
-for label, segs in [
-        ("Level I: welding fundamentals",
-         [(0.0, TODAY, S_DONE), (2.0, 3.0, S_NOT)]),
-        ("Level L: execution in the cell",
-         [(0.0, TODAY, S_DONE), (TODAY, 4.0, S_NOT)]),
-        ("Level U: robot programming", [(2.0, 4.7, S_NOT)]),
-        ("Level O: ANDON and improvement",
-         [(0.0, TODAY, S_DONE), (3.0, 4.7, S_NOT)]),
-        ("Integration project",
-         [(0.0, TODAY, S_DONE), (TODAY, 4.0, S_NOT)])]:
-    tb, tf = txbox(s, 0.5, by + 0.08, 3.0, 0.4)
-    para(tf, label, 12, NAVY, bold=True, first=True, spacing=1.1)
-    for a, b, st in segs:
-        rect(s, at(a), by, at(b) - at(a), bh, fill=FILL[st])
-    by += 0.72
-
-rect(s, at(TODAY) - 0.015, GY - 0.04, 0.03, GH, fill=LIME)
-tb, tf = txbox(s, at(TODAY) - 0.56, GY - 0.62, 1.12, 0.24, align=PP_ALIGN.CENTER)
-para(tf, "TODAY", 9.5, NAVY, bold=True, first=True)
-
-lx = 3.62
-for lbl, st in (("Actual", S_DONE), ("Planned", S_NOT)):
-    rect(s, lx, 6.5, 0.2, 0.2, fill=FILL[st])
-    tb, tf = txbox(s, lx + 0.3, 6.47, 1.6, 0.26)
-    para(tf, lbl, 10.5, MUTED, first=True)
-    lx += 1.6
-
-notes[17] = (
-    "The same story on a calendar. The green line is today, September twenty "
-    "fifth. Everything to its left actually happened: level I content and "
-    "level L execution built up in the cell, ANDON orders closed, and the "
-    "integration project running alongside all of it. Everything to the right "
-    "is what I am proposing. The level I exam in October, level L closed by "
-    "the end of November, level U programming from October to December, and "
-    "one level O improvement before I finish. Level I needs a scheduled "
-    "session and level U needs supervised cell time. Both are calendar items, "
-    "not budget items.")
-
-# ============================================================ 19 · the ask
-
-
-s = new("Standard_Light", 19, dark=False)
-head(s, "WHAT I NEED FROM YOU", "Four commitments, and none of them cost money",
-     None, dark=False)
-
-for x, w, lbl in ((1.18, 5.2, "COMMITMENT"), (6.8, 3.6, "WHAT I NEED"),
-                  (10.9, 1.9, "WHEN")):
-    tb, tf = txbox(s, x, 2.3, w, 0.26)
-    para(tf, lbl, 9, BLUE, bold=True, first=True)
-
-y = 2.68
-for i, (a, unlock, need, when) in enumerate([
-        ("Sit the Level I written exam", "Validates Level I",
-         "A date on the calendar", "October"),
-        ("Document parameter validations vs. the WPS", "Closes Level L",
-         "Access to the parameter sheets", "Oct – Nov"),
-        ("Create one welding program in SKS, supervised", "Opens Level U",
-         "Cell time and supervision", "November"),
-        ("Take one improvement idea to implementation",
-         "First Level O evidence", "A sponsor for the idea", "Nov – Dec")]):
-    if i % 2 == 0:
-        rect(s, 0.5, y - 0.13, 12.33, 0.98, fill=TINT)
-    badge(s, 0.62, y + 0.12, 0.4, str(i + 1), NAVY, LIME, 14)
-    tb, tf = txbox(s, 1.18, y, 5.2, 0.8)
-    para(tf, a, 14, NAVY, bold=True, first=True, spacing=1.14)
-    para(tf, unlock, 11, BLUE, space_before=4)
-    tb, tf = txbox(s, 6.8, y + 0.14, 3.6, 0.5, anchor=MSO_ANCHOR.MIDDLE)
-    para(tf, need, 13, MUTED, first=True, spacing=1.14)
-    tb, tf = txbox(s, 10.9, y + 0.14, 1.9, 0.5, anchor=MSO_ANCHOR.MIDDLE)
-    para(tf, when, 13, BLUE, bold=True, first=True)
-    y += 1.0
-
-tb, tf = txbox(s, 0.5, 6.78, 12.33, 0.3)
-para(tf, "Approve these four and I finish the program certified, not just "
-         "experienced.", 14, NAVY, bold=True, first=True)
-
-notes[18] = (
-    "So here is the ask, and it is small. Four things. Give me two half-days "
-    "for the level I session and the exam, and the theory stops being "
-    "informal. Give me access to the parameter sheets and I will document ten "
-    "validations, which closes level L. Give me supervised cell time and I "
-    "will build one program in SKS, which opens level U. And give me a sponsor "
-    "for one improvement idea and I leave you my first piece of level O "
-    "evidence. Every one of these produces a document you can audit. None of "
-    "them needs budget. They need calendar.")
-
-# ============================================================ 20 · conclusions
-
-
-s = new("Standard_Dark", 20, dark=True)
-head(s, "CONCLUSIONS", "Informally capable now, certified by January", None,
-     dark=True)
-y = 2.1
-for i, t in enumerate([
-        "I studied all of Level I. None of it is validated yet.",
-        "The floor taught me faster than the schedule would have.",
-        "Two months ago I called the ANDON in. Now I close it.",
-        "Fourteen weeks left, and a plan for them."]):
-    tb, tf = txbox(s, 0.5, y, 0.9, 0.5)
-    para(tf, "0%d" % (i + 1), 26, LIME, bold=True, first=True)
-    tb, tf = txbox(s, 1.52, y + 0.04, 10.8, 0.5)
-    para(tf, t, 21, WHITE, bold=True, first=True)
-    y += 1.1
-
-rect(s, 0.5, 6.22, 12.33, 0.02, fill=RULE)
-tb, tf = txbox(s, 0.5, 6.46, 12.33, 0.34)
-para(tf, "Trust first, then the torch. That is how I read WIN.", 17, LIME,
-     bold=True, italic=True, first=True)
-
-notes[19] = (
-    "Three conclusions. First, I am genuinely capable at level L, and I am "
-    "being honest that level I is not validated. Second, learning on the floor "
-    "made me faster at diagnosing problems than a classroom would have. It "
-    "just did not generate paperwork. Third, I have fourteen weeks and a "
-    "concrete plan for them. And if I go back to the value I picked at the "
-    "start: trust first, then the torch. That is what these two months taught "
-    "me.")
-
-# ============================================================ 21 · closing
-
-
-# the Closing layout carries a large centred logo at y 3.39-4.10, keep it clear
-s = new("Closing Slide", 21, dark=True, footer=False)
-tb, tf = txbox(s, 0.0, 1.72, SW, 0.8, align=PP_ALIGN.CENTER)
-para(tf, "Thank you", 44, WHITE, bold=True, first=True)
-tb, tf = txbox(s, 0.0, 2.62, SW, 0.34, align=PP_ALIGN.CENTER)
-para(tf, "Questions?", 17, LIME, bold=True, first=True)
-tb, tf = txbox(s, 0.0, 4.56, SW, 0.62, align=PP_ALIGN.CENTER)
-para(tf, "Diego Adair de León Márquez", 15, WHITE, first=True,
-     align=PP_ALIGN.CENTER)
-para(tf, "Robotic Welding  ·  Engineering  ·  Tenneco Aguascalientes",
-     11.5, GRAYL, space_before=6, align=PP_ALIGN.CENTER)
-
-notes[20] = (
-    "Thank you. I am happy to take questions, and if anyone wants the detail "
-    "behind any of the twenty three skills, I can walk through it.")
+notes[14] = "Thank you. I am happy to take any questions."
 
 # ---------------------------------------------------------------- notes
-for i, slide in enumerate(prs.slides):
+for i, sl in enumerate(prs.slides):
     if i in notes:
-        slide.notes_slide.notes_text_frame.text = notes[i]
+        sl.notes_slide.notes_text_frame.text = notes[i]
 
 # ---------------------------------------------------------------- morph
 # PowerPoint stores Morph behind a markup-compatibility choice: 2016+ reads
@@ -981,17 +738,17 @@ MORPH = (
     'spd="slow"><p:fade/></p:transition>'
     '</mc:Fallback></mc:AlternateContent>')
 
-def set_morph(slide):
+def set_morph(sl):
     """Insert the transition after clrMapOvr, where CT_Slide expects it."""
-    sld = slide._element
+    sld = sl._element
     frag = parse_xml(MORPH)
     anchor = sld.find(qn('p:clrMapOvr'))
     if anchor is None:
         anchor = sld.find(qn('p:cSld'))
     anchor.addnext(frag)
 
-for slide in prs.slides:
-    set_morph(slide)
+for sl in prs.slides:
+    set_morph(sl)
 
 prs.save(OUT)
 print("saved", OUT)
