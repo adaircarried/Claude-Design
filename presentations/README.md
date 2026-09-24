@@ -11,12 +11,12 @@ the 4M improvement and the training process update.
 | Plant tutor | Fernando Robledo |
 | Audience | Plant manager, non-technical |
 | Date | 25 September 2026 |
-| Length | 15 slides, about 9 minutes of scripted notes, in English |
+| Length | 14 slides, 15 minutes, in English |
 
 ## Files
 
-- `Tenneco_Robotics_Setter_Diego_de_Leon.pptx` is the deck. Every slide has
-  English speaker notes.
+- `Tenneco_Robotics_Setter_Diego_de_Leon.pptx` is the deck. The speaker notes
+  are not a script. Each slide carries only the key points not to forget.
 - `Tenneco_Robotics_Setter_Diego_de_Leon.pdf` is a read-only preview.
   LibreOffice renders it without Segoe UI, so lines wrap a little earlier
   than they do in PowerPoint.
@@ -44,12 +44,13 @@ python3 deck.py /path/to/Presentacion_de_becarios.pptx
 | 5 | Eight weeks in, fourteen to go | Timeline, with today highlighted |
 | 6 | Level I | The five topics and how they were learned |
 | 7 | Four skills on my own | Progress on the 23 skills, one dot per skill |
-| 8 | Industrialization | How time is split, 60% project and 40% cell support |
-| 9 to 11 | Improvement | The manual booth, the move to 4M, and before versus after |
-| 12 | Training process update | A proposal: reviewed, found, rebuilt |
-| 13 | Next | Levels L, U and O, and what is needed |
-| 14 | Conclusions | In place and next |
-| 15 | Thank you | |
+| 8 | Industrialization | The Cummins project, 60% of the time, and 40% at the cells |
+| 9 | Improvement idea and implementation | 4M: problem, idea and what is running today |
+| 10 | Results | Cycle time 174 s to 93 s, load, weld and unload per part |
+| 11 | Training process update | A proposal: reviewed, found, rebuilt |
+| 12 | Next | Levels L, U and O, and what is needed |
+| 13 | Conclusions | In place and next |
+| 14 | Thank you | |
 
 The 4M improvement counts as the first skill in progress under *Implementing
 improvement ideas* (Level O), so the totals are 4 on my own, 13 in progress
@@ -88,22 +89,21 @@ Keep those names if you edit the slides.
 
 ## Photos
 
-The deck has no photos. Diego adds his own by hand:
+The deck has no photos. Diego adds his own by hand in the two frames on
+slide 9, *Before: manual welding booth* and *After: 4M robotic cell*. To use a
+frame, delete its label, drop the photo on top, and crop the photo to the
+frame.
 
-| Slide | Frame | Photo |
+## 4M data
+
+The cycle times are in seconds per part and come from Diego. The fixture is
+the same in both cells, so load and unload stay equal.
+
+| | Manual booth | 4M robotic cell |
 |---|---|---|
-| 9 | PHOTO, Manual welding booth | The booth before the change |
+| Load | 20 | 20 |
+| Welding | 146 | 65 |
+| Unload | 8 | 8 |
+| **Cycle time** | **174** | **93** |
 
-To use a frame, delete its label, drop the photo on top, and crop the photo to
-the frame. Photos also fit well on slides 8 and 10 if there is room.
-
-## Still to fill in
-
-- **Slide 8, *My part*:** two bracketed lines, the industrialization project
-  and your role in it. The notes have a matching bracket.
-- **Slide 11, results:** every `XX` value. That is minutes per part before
-  and after, % reduction, welds moved to the robot, and minutes of
-  uncomfortable welding removed per shift. The notes on slide 11 use the same
-  `XX` placeholders.
-- **Slide 10, the four steps:** confirm that they match what was actually
-  done.
+That is 47% less cycle time, 56% less welding time and 81 s saved per part.

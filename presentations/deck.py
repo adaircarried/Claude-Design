@@ -240,13 +240,6 @@ para(tf, "Plant Tutor: Fernando Robledo", 11, GRAY, space_before=2,
 para(tf, "Engineering Department  |  August 1, 2026 to January 1, 2027",
      11, LIME, space_before=2, align=PP_ALIGN.CENTER)
 
-notes[0] = (
-    "Good morning. My name is Diego de León, and I study Mechatronics "
-    "Engineering at the Universidad Politécnica de Aguascalientes. Since "
-    "August I have been part of the Robotics Setter Technician program here "
-    "in Aguascalientes, with Fernando Robledo as my plant tutor. In the next "
-    "fifteen minutes I will show you what the program asks of me, what I have "
-    "learned so far, and the improvement we already put on the floor.")
 
 # ============================================================ 2 · WIN
 s = prs.slides.add_slide(layouts["Impact Slide"])
@@ -263,14 +256,6 @@ para(tf, "We must earn the trust of our employees and customers.", 15, GRAY,
 para(tf, "For me, winning meant taking the longest, hardest weld off a team "
      "member’s hands.", 14, LIME, space_before=10)
 
-notes[1] = (
-    "The Tenneco value I identify with is Win. Win means earning the trust of "
-    "our people and our customers. On the floor, trust is not given because "
-    "of a title. You earn it by showing up when a robot stops, by learning "
-    "the process properly, and by making someone else’s job better. The "
-    "clearest moment for me was the improvement I will show you later: a "
-    "long, uncomfortable weld that a team member did by hand now runs on a "
-    "robot. That is what winning looks like to me.")
 
 # ============================================================ 3 · scope
 s = slide("Program scope and objective",
@@ -293,7 +278,7 @@ tb, tf = txbox(s, 8.95, 2.60, 3.75, 3.2)
 para(tf, "An implemented improvement", 14, WHITE, bold=True, first=True)
 para(tf, "In quality, availability or productivity.", 12, GRAY,
      space_before=2)
-para(tf, "Mine: a manual weld moved to the 4M robotic cell.", 12, LIME,
+para(tf, "Mine: 4M, implemented, with 47% less cycle time.", 12, LIME,
      space_before=4)
 para(tf, "An updated training process", 14, WHITE, bold=True,
      space_before=20)
@@ -301,14 +286,6 @@ para(tf, "How the next setters learn.", 12, GRAY, space_before=2)
 para(tf, "Mine: study material reviewed, schedule rebuilt.", 12, LIME,
      space_before=4)
 
-notes[2] = (
-    "This is the program in one sentence: become a specialist in robotic "
-    "welding and advanced technical support. It matters because when a "
-    "welding robot stops, the line stops with it. The program closes with a "
-    "final project in two parts. First, an improvement that is actually "
-    "implemented, in quality, availability or productivity. Second, an update "
-    "to the training process, so the next setters learn faster. I already "
-    "have something real for both, and I will show you each one.")
 
 # ============================================================ 4 · ILUO path
 s = slide("Four levels, from understanding to improving",
@@ -336,14 +313,6 @@ text(s, 0.62, 5.62, 2.2, 0.25, "HOW IT WORKS", 11, LIME, bold=True)
 text(s, 2.75, 5.60, 10.0, 0.3, "Each level builds on the one before: first "
      "understand, then do, then own it, then improve it.", 12, WHITE)
 
-notes[3] = (
-    "The program follows four levels, the same ILUO path the plant uses for "
-    "any skill. I is understanding: safety, how the welding process works, "
-    "the approved procedure, defects and settings. L is doing it with "
-    "support: adjustments, checking settings and changing consumables. U is "
-    "doing it alone, which here means programming the robot. And O is the "
-    "highest level: solving problems, teaching others and improving the "
-    "process. Each level builds on the one before.")
 
 # ============================================================ 5 · timeline
 s = slide("Eight weeks in, fourteen to go", "Program timeline")
@@ -367,14 +336,6 @@ for k, (name, when, hot) in enumerate(MILES):
     text(s, cx - 1.15, 4.47, 2.30, 0.3, when, 14, LIME if hot else GRAY,
          bold=hot, align=PP_ALIGN.CENTER)
 
-notes[4] = (
-    "Here is where we are in time. The program started on August 1 and "
-    "closes on January 1. Today I am eight weeks in, with fourteen to go. "
-    "The next step is the Level I exam, planned for October. After that, "
-    "November and December are for Levels L and U, where the work moves from "
-    "knowing to doing: first with support, then on my own. One thing to keep "
-    "in mind: there are no fixed training hours. Most of the learning happens "
-    "while we attend real stops at the cells.")
 
 # ============================================================ 6 · Level I
 s = slide("Level I: understand it before you touch the robot",
@@ -404,15 +365,6 @@ for k, (big, d) in enumerate(HOW):
     text(s, 8.95, y, 3.8, 0.5, big, 26, LIME, bold=True)
     text(s, 8.95, y + 0.50, 3.75, 0.5, d, 12, GRAY)
 
-notes[5] = (
-    "Level I is about understanding before touching anything. It has five "
-    "topics. Safety, so nobody gets hurt around the cell. GMAW welding, which "
-    "is how the robot joins steel with wire, gas and an electric arc. The "
-    "WPS, the approved recipe every weld must follow. Defects, meaning how to "
-    "recognize a bad weld and what caused it. And parameters, the settings "
-    "that shape the weld and how far they are allowed to move. I learned it "
-    "from six hundred pages of material, a practice exam, and every day at "
-    "the cells.")
 
 # ============================================================ 7 · progress
 s = slide("Four skills on my own, thirteen in progress",
@@ -464,22 +416,14 @@ for k, t in enumerate(DONE):
 text(s, 9.25, 5.45, 3.6, 0.3, "Level I: exam still pending.", 12, LIME,
      bold=True)
 
-notes[6] = (
-    "This is my honest status on the twenty three skills of the program. "
-    "Four I already do on my own: changing consumables, adjusting the key "
-    "welding settings, reading weld symbols on drawings, and closing ANDON "
-    "calls. Thirteen are in progress, including all of Level I, which I have "
-    "studied completely but still have to prove in the exam. Six have not "
-    "started yet, most of them in the top level. The 4M improvement counts "
-    "here too: it is my first step in the improvement skill.")
 
 # ============================================================ 8 · industrialization
 s = slide("Most of my time goes to industrialization",
           "How my time is split")
 glass(s, 0.28, 1.75, 5.20, 4.25, name="!! Glass A")
 text(s, 0.68, 2.00, 4.4, 0.9, "60%", 54, LIME, bold=True)
-text(s, 0.68, 2.95, 4.4, 0.6, "Industrialization project, with Engineering",
-     14, WHITE, bold=True)
+text(s, 0.68, 2.95, 4.4, 0.6, "Industrialization project", 14, WHITE,
+     bold=True)
 rect(s, 0.68, 3.75, 4.40, 0.16, fill=GRAY, opacity=30)
 rect(s, 0.68, 3.75, 4.40 * 0.6, 0.16, fill=LIME)
 text(s, 0.68, 4.25, 4.4, 0.6, "40%", 30, WHITE, bold=True)
@@ -488,121 +432,91 @@ para(tf, "Support at the robotic cells: stops, adjustments and ANDON calls.",
      12, GRAY, first=True)
 
 glass(s, 5.80, 1.75, 7.25, 4.25, name="!! Glass B")
-label(s, 6.20, 2.08, "WHAT INDUSTRIALIZATION MEANS")
-tb, tf = txbox(s, 6.20, 2.52, 6.45, 1.2)
+label(s, 6.20, 2.08, "THE PROJECT")
+tb, tf = txbox(s, 6.20, 2.52, 6.45, 1.0)
+para(tf, "Industrialization of the new Cummins project, together with "
+     "Engineering.", 15, WHITE, first=True, spacing=1.1)
+lime_rule(s, 6.20, 3.62)
+label(s, 6.20, 3.88, "WHAT INDUSTRIALIZATION MEANS")
+tb, tf = txbox(s, 6.20, 4.32, 6.45, 1.3)
 para(tf, "Getting a new process ready to run on the floor: equipment, "
-     "programs, trials and the release to production.", 15, WHITE,
+     "programs, trials and the release to production.", 14, GRAY,
      first=True, spacing=1.1)
-lime_rule(s, 6.20, 3.85)
-label(s, 6.20, 4.08, "MY PART")
-tb, tf = txbox(s, 6.20, 4.50, 6.45, 1.3)
-para(tf, "[Project in one line: the product or line being industrialized.]",
-     13, GRAY, italic=True, first=True)
-para(tf, "[What I do in it, in one or two short phrases.]", 13, GRAY,
-     italic=True, space_before=6)
 
-notes[7] = (
-    "About sixty percent of my time goes to an industrialization project "
-    "with Engineering. Industrialization means getting a new process ready to "
-    "run on the floor: the equipment, the programs, the trials and the "
-    "release to production. [Add one or two sentences on the project and your "
-    "role.] The other forty percent is support at the robotic cells, and "
-    "that is where most of my hands-on learning comes from.")
-
-# ============================================================ 9 · problem
-s = slide("A long, uncomfortable weld, done by hand",
-          "Improvement  |  The starting point")
+# ============================================================ 9 · improvement idea
+s = slide("Improvement idea: from a manual booth to the 4M cell",
+          "Improvement idea and implementation  |  Done")
 glass(s, 0.28, 1.75, 6.35, 4.25, name="!! Glass A")
-label(s, 0.68, 2.08, "THE STARTING POINT")
-text(s, 0.68, 2.52, 5.6, 0.7, "One process ran in a manual welding booth.",
-     17, WHITE)
-PAIN = [("Time", "Long welds made every part slow to finish."),
-        ("The team member", "Uncomfortable positions, held for a long time, "
-                            "part after part.")]
-for k, (t, d) in enumerate(PAIN):
-    y = 3.35 + k * 0.92
-    rect(s, 0.68, y + 0.07, 0.16, 0.16, fill=LIME, shape=MSO_SHAPE.CHEVRON)
-    text(s, 1.00, y, 5.3, 0.3, t, 14, WHITE, bold=True)
-    text(s, 1.00, y + 0.32, 5.3, 0.5, d, 13, GRAY)
-text(s, 0.68, 5.40, 5.6, 0.35, "The idea: let a robot do it.", 15, LIME,
-     bold=True)
-photo(s, 6.98, 1.75, 6.07, 4.25, "Manual welding booth", "!! Glass B")
+IDEA = [("THE PROBLEM",
+         "Long welds, done by hand in a manual booth: 146 s of welding per "
+         "part, in uncomfortable positions."),
+        ("THE IDEA",
+         "Move the process to 4M, an automatic robotic cell, with the same "
+         "fixture.")]
+for k, (lab, d) in enumerate(IDEA):
+    y = 2.08 + k * 1.22
+    label(s, 0.68, y, lab)
+    tb, tf = txbox(s, 0.68, y + 0.42, 5.6, 0.8)
+    para(tf, d, 14, WHITE, first=True, spacing=1.1)
+lime_rule(s, 0.68, 4.60)
+label(s, 0.68, 4.80, "IMPLEMENTED")
+tb, tf = txbox(s, 0.68, 5.20, 5.6, 0.7)
+para(tf, "Running in 4M today. The robot welds, and the team member only "
+     "loads and unloads.", 14, LIME, bold=True, first=True, spacing=1.1)
+photo(s, 6.98, 1.75, 6.07, 2.02, "Before: manual welding booth",
+      "!! Glass B")
+photo(s, 6.98, 3.98, 6.07, 2.02, "After: 4M robotic cell", "!! Glass C")
 
-notes[8] = (
-    "Now the improvement. It started with one process that ran in a manual "
-    "welding booth. The welds on this part were long, so every part took a "
-    "long time. And for the team member it was hard work: uncomfortable "
-    "positions, held for a long time, part after part. My supervisor and I "
-    "asked a simple question: why is a person doing the longest and hardest "
-    "weld, when we have robots that can do it?")
+# ============================================================ 10 · results
+s = slide("Same part, 47% less cycle time", "Improvement  |  Results, in "
+          "seconds per part")
+glass(s, 0.28, 1.75, 8.25, 4.25, name="!! Glass A")
+label(s, 0.68, 2.08, "CYCLE TIME PER PART")
+# (name, load, weld, unload): same fixture, so load and unload do not move
+CT = [("Manual booth", 20, 146, 8, False),
+      ("4M robotic cell", 20, 65, 8, True)]
+SCALE = 6.0 / 174                        # inches per second
+BX = 0.68
+for k, (nm, ld, wd, ul, auto) in enumerate(CT):
+    y = 2.62 + k * 1.22
+    text(s, BX, y, 4.0, 0.3, nm, 14, WHITE, bold=True)
+    x = BX
+    for sec, kind in ((ld, "load"), (wd, "weld"), (ul, "unload")):
+        w = sec * SCALE
+        if kind == "weld":
+            seg = rect(s, x, y + 0.38, w - 0.03, 0.46,
+                       fill=LIME if auto else GRAY, opacity=100 if auto else 70)
+            ink = NAVY
+        else:
+            seg = rect(s, x, y + 0.38, w - 0.03, 0.46, fill=GRAY, opacity=30)
+            ink = WHITE
+        seg.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+        para(seg.text_frame, str(sec), 11 if sec < 10 else 12, ink,
+             bold=True, first=True, align=PP_ALIGN.CENTER)
+        x += w
+    text(s, x + 0.12, y + 0.42, 1.3, 0.4, "%d s" % (ld + wd + ul), 20,
+         LIME if auto else WHITE, bold=True)
+# legend
+lx = BX
+for t, kw in (("Load and unload", dict(fill=GRAY, opacity=30)),
+              ("Welding by hand", dict(fill=GRAY, opacity=70)),
+              ("Welding by robot", dict(fill=LIME))):
+    rect(s, lx, 5.12, 0.18, 0.18, **kw)
+    text(s, lx + 0.28, 5.09, 1.8, 0.25, t, 11, GRAY)
+    lx += 2.10
+text(s, BX, 5.48, 7.5, 0.3, "Same fixture, so loading and unloading take "
+     "the same time. The gain is all in the welding.", 11, DIM)
 
-# ============================================================ 10 · the change
-s = slide("From the manual booth to the 4M robotic cell",
-          "Improvement  |  What we did")
-STEPS = [("01", "Study the part",
-          "Which welds, how long they take, and what made them hard."),
-         ("02", "Move it to 4M",
-          "Bring the part into the automatic cell."),
-         ("03", "Program and adjust",
-          "Robot path and welding settings, until the weld is right."),
-         ("04", "Validate and release",
-          "Check weld quality, then hand it over to production.")]
-for i, (n, t, d) in enumerate(STEPS):
-    x = 0.28 + i * (CW + CG)
-    glass(s, x, 1.85, CW, 3.10, name="!! Card %d" % (i + 1))
-    text(s, x + 0.34, 2.15, CW - 0.6, 0.55, n, 30, LIME, bold=True)
-    text(s, x + 0.34, 2.85, CW - 0.6, 0.7, t, 16, WHITE, bold=True)
-    tb, tf = txbox(s, x + 0.34, 3.67, CW - 0.62, 1.2)
-    para(tf, d, 12, GRAY, first=True, spacing=1.1)
-    if i < 3:
-        rect(s, x + CW + 0.07, 3.30, 0.16, 0.16, fill=LIME,
-             shape=MSO_SHAPE.CHEVRON)
-glass(s, 0.28, 5.30, 12.77, 0.66, name="!! Strip")
-text(s, 0.62, 5.52, 2.2, 0.25, "TEAMWORK", 11, LIME, bold=True)
-text(s, 2.75, 5.50, 10.0, 0.3, "Designed and implemented together with my "
-     "supervisor, from the idea to the release.", 12, WHITE)
+glass(s, 8.85, 1.75, 4.20, 4.25, name="!! Glass B")
+KPI = [("−47%", "cycle time, 174 s to 93 s"),
+       ("−56%", "welding time, 146 s to 65 s"),
+       ("81 s", "saved on every part")]
+for k, (big, lab) in enumerate(KPI):
+    y = 2.02 + k * 1.30
+    text(s, 9.25, y, 3.6, 0.6, big, 32, LIME, bold=True)
+    text(s, 9.25, y + 0.66, 3.6, 0.3, lab, 12, GRAY)
 
-notes[9] = (
-    "This is how we did it, in four steps. First, we studied the part: which "
-    "welds, how long they took, and what made them hard. Second, we moved the "
-    "part into the 4M cell, which is an automatic welding cell. Third, we "
-    "programmed the robot and adjusted the welding settings until the weld "
-    "was right. And fourth, we checked the weld quality and released it to "
-    "production. I did this together with my supervisor, from the idea to "
-    "the release.")
-
-# ============================================================ 11 · before / after
-s = slide("Same part, less time, less strain", "Improvement  |  Results")
-glass(s, 0.28, 1.80, 6.15, 2.75, tone="gray", name="!! Glass A")
-text(s, 0.70, 2.20, 5.3, 0.3, "BEFORE  |  MANUAL BOOTH", 11, GRAY, bold=True)
-text(s, 0.70, 2.72, 5.3, 0.8, "XX min", 36, WHITE, bold=True)
-text(s, 0.70, 3.62, 5.3, 0.3, "per part, welded by hand", 12, GRAY)
-
-after = rect(s, 6.90, 1.80, 6.15, 2.75, fill=LIME, opacity=66,
-             shape=MSO_SHAPE.ROUNDED_RECTANGLE, name="!! Glass B")
-after.adjustments[0] = 0.06
-text(s, 7.32, 2.20, 5.3, 0.3, "AFTER  |  4M ROBOTIC CELL", 11, NAVY,
-     bold=True)
-text(s, 7.32, 2.72, 5.3, 0.8, "XX min", 36, NAVY, bold=True)
-text(s, 7.32, 3.62, 5.3, 0.3, "per part, welded by the robot", 12, NAVY)
-
-KPI = [("XX%", "less process time per part"),
-       ("XX", "welds moved from the booth to the robot"),
-       ("XX min", "of uncomfortable welding removed per shift")]
-for i, (big, lab) in enumerate(KPI):
-    x = 0.28 + i * 4.37
-    text(s, x, 4.95, 4.0, 0.6, big, 32, LIME, bold=True)
-    text(s, x, 5.62, 3.9, 0.4, lab, 12, GRAY)
-
-notes[10] = (
-    "And these are the results. Before, in the manual booth, each part took "
-    "XX minutes. Now, in the 4M cell, it takes XX minutes. That is XX percent "
-    "less process time. XX welds moved from a person to the robot, and the "
-    "team member no longer spends XX minutes per shift in uncomfortable "
-    "positions. For me, this is the part I am proudest of: the process got "
-    "faster, and a person’s work got better at the same time.")
-
-# ============================================================ 12 · training update
+# ============================================================ 11 · training update
 s = slide("What I would change in how setters learn",
           "Final project  |  Training process update, a proposal")
 TRAIN = [("01", "Reviewed",
@@ -626,17 +540,8 @@ text(s, 0.62, 5.62, 2.2, 0.25, "PROPOSAL", 11, LIME, bold=True)
 text(s, 2.75, 5.60, 10.0, 0.3, "Use the corrected material and the new "
      "schedule with the next group of setters.", 12, WHITE)
 
-notes[11] = (
-    "The second half of the final project is the training process. I read "
-    "the full training material, more than six hundred pages including the "
-    "customer standard, and compared it with what Level I asks. I found "
-    "gaps: for example, the practice exam spends eight of its twenty five "
-    "questions on TIG welding, which the skill matrix does not mention. I "
-    "also found an error in one of the key tables. And I rebuilt the training "
-    "schedule in the plant format, so we can compare the plan with what "
-    "really happened. My proposal is to use both with the next group.")
 
-# ============================================================ 13 · next
+# ============================================================ 12 · next
 s = slide("Next: from knowing it to doing it alone",
           "What comes next, until January")
 glass(s, 0.28, 1.75, 7.90, 4.25, name="!! Glass A")
@@ -665,21 +570,14 @@ for k, t in enumerate(NEED):
     rect(s, 8.95, y + 0.09, 0.14, 0.14, fill=LIME, shape=MSO_SHAPE.CHEVRON)
     text(s, 9.25, y, 3.55, 0.7, t, 14, WHITE)
 
-notes[12] = (
-    "What comes next. In November, Level L: validating settings and finding "
-    "defects at the cell, with support. In December, Level U: creating and "
-    "setting up robot programs on my own. Level O, solving problems and "
-    "improving, already started with 4M. To get there I need three things: "
-    "a date for my Level I exam, supervised time programming robots, and "
-    "your feedback on the training proposal.")
 
-# ============================================================ 14 · conclusions
+# ============================================================ 13 · conclusions
 s = slide("Conclusions and next steps", "What is in place, and what comes next")
 glass(s, 0.28, 1.75, 6.35, 4.05, name="!! Glass A")
 label(s, 0.68, 2.08, "IN PLACE")
 INPLACE = ["Level I studied in full, and four skills done on my own.",
-           "A manual weld moved to the 4M robotic cell: less time, less "
-           "strain.",
+           "A manual weld moved to the 4M robotic cell: 47% less cycle "
+           "time, less strain.",
            "A reviewed study path, and a schedule that shows plan versus "
            "reality."]
 glass(s, 6.98, 1.75, 6.07, 4.05, name="!! Glass B")
@@ -693,15 +591,8 @@ for x, items, w in ((0.68, INPLACE, 5.55), (7.38, NEXTS, 5.27)):
 text(s, 3.40, 6.25, 9.6, 0.4, "I came to learn robotic welding, and I am "
      "already improving it.", 15, LIME, bold=True)
 
-notes[13] = (
-    "To close. In place today: Level I studied in full, four skills I do on "
-    "my own, a manual weld moved to the 4M cell with less time and less "
-    "strain, and a reviewed training path. Next: pass the Level I exam in "
-    "October, reach Levels L and U before January, and keep measuring 4M "
-    "while we look for the next weld to automate. I came here to learn "
-    "robotic welding, and I am already improving it.")
 
-# ============================================================ 15 · closing
+# ============================================================ 14 · closing
 s = prs.slides.add_slide(layouts["Closing Slide"])
 for p_ in list(s.placeholders):
     p_.element.getparent().remove(p_.element)
@@ -710,7 +601,60 @@ text(s, 0.0, 5.15, SW, 0.7, "Thank you", 30, WHITE, bold=True,
 text(s, 0.0, 5.95, SW, 0.25, "Diego Adair de León Márquez   |   Engineering "
      "Department", 13, GRAY, align=PP_ALIGN.CENTER)
 
-notes[14] = "Thank you. I am happy to take any questions."
+
+# ---------------------------------------------------------------- key points
+# Not a script: the few points Diego must not forget on each slide.
+KEY = [
+    ["Name, UPA, Mechatronics, 9th term.",
+     "Program: Robotics Setter Technician, since August 1.",
+     "Plant tutor: Fernando Robledo.",
+     "Today: what the program asks, what I learned, the improvement."],
+    ["Win: earn the trust of our people and customers.",
+     "Trust is earned on the floor, not given by a title.",
+     "My example: the longest, hardest weld is now on a robot (4M)."],
+    ["Objective: specialist in robotic welding and technical support.",
+     "Why: when a welding robot stops, the line stops.",
+     "Final project has two halves, and I have both: 4M and the training "
+     "update."],
+    ["ILUO: understand, do with support, do alone, improve and teach.",
+     "Same path the plant uses for any skill.",
+     "Each level builds on the one before."],
+    ["8 weeks done, 14 to go.",
+     "Level I exam in October.",
+     "No fixed training hours: I learn while attending real stops."],
+    ["Five topics, in plain words: safety, GMAW, WPS, defects, parameters.",
+     "WPS = the approved recipe for every weld.",
+     "Learned from 616 pages, a practice exam and daily work at the cells."],
+    ["Name the four on my own: consumables, key settings, weld symbols, "
+     "ANDON.",
+     "Level I studied in full, but the exam is still pending.",
+     "4M counts as my first step in the improvement skill."],
+    ["60% of my time: industrialization of the Cummins project.",
+     "Industrialization = getting a new process ready for the floor.",
+     "The other 40% at the cells is where the hands-on learning comes from."],
+    ["Problem: 146 s of welding by hand, in uncomfortable positions.",
+     "Idea: move it to 4M, same fixture.",
+     "Done with my supervisor, and running today.",
+     "The team member now only loads and unloads."],
+    ["Cycle time 174 s to 93 s: 47% less.",
+     "Welding 146 s to 65 s: 56% less.",
+     "Load and unload did not change (same fixture), so the gain is all "
+     "welding.",
+     "81 s saved on every part, and less strain for the team member."],
+    ["It is a proposal, not something already adopted.",
+     "Example gap: 8 of 25 exam questions are TIG, and the matrix never "
+     "names it.",
+     "The error: the transfer mode table in the manual.",
+     "The new schedule compares plan against reality, week by week."],
+    ["L in November, U in December, O already started with 4M.",
+     "Ask clearly: an exam date, supervised SKS time, feedback on the "
+     "proposal."],
+    ["Close with the lime line.",
+     "Pause, then open for questions."],
+    ["Thank them. Take questions."],
+]
+for i, pts in enumerate(KEY):
+    notes[i] = "\n".join("• " + p for p in pts)
 
 # ---------------------------------------------------------------- notes
 for i, sl in enumerate(prs.slides):
