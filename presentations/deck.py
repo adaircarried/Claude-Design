@@ -151,9 +151,15 @@ TONES = {
 GLASS_OPACITY = 50                     # percent, native and editable
 _glass_n = [0]
 
-def glass(slide, x, y, w, h, bg="road", tone="blue", name=None, edge=True):
+def glass(slide, x, y, w, h, bg="road", tone="blue", name=None):
     """A panel whose fill is the background it covers, lifted and saturated.
-    On white there is nothing to copy, so it becomes a soft navy tint."""
+    On white there is nothing to copy, so it becomes a soft navy tint.
+
+    Always ONE rectangle (p:sp), never a picture plus a separate rim: Morph
+    only pairs objects of the same kind, so a picture on a dark slide and a
+    rectangle on a white one would never animate into each other, even with
+    the same !! name. On dark the copied background goes in as a picture
+    fill of that rectangle, and the rim is its own outline."""
     if LIGHT:
         return rect(slide, x, y, w, h, fill=NAVY, opacity=4, line=NAVY,
                     lw=0.75, line_opacity=12, name=name)
@@ -168,18 +174,19 @@ def glass(slide, x, y, w, h, bg="road", tone="blue", name=None, edge=True):
     path = os.path.join(GLASS_DIR, "glass_%02d.jpg" % _glass_n[0])
     crop.save(path, quality=90)
 
-    pic = slide.shapes.add_picture(path, Inches(x), Inches(y),
-                                   Inches(w), Inches(h))
-    pic.name = name or "Glass %d" % _glass_n[0]
-    pic._element.nvPicPr.cNvPr.set("descr", "Decorative glass panel")
-    blip = pic._element.blipFill.find(qn('a:blip'))
-    blip.insert(0, parse_xml(
-        '<a:alphaModFix xmlns:a="http://schemas.openxmlformats.org/'
-        'drawingml/2006/main" amt="%d"/>' % (GLASS_OPACITY * 1000)))
-    if edge:   # the thin light rim that separates glass from background
-        rect(slide, x, y, w, h, line=WHITE, lw=0.75, line_opacity=16,
-             name=(name + " rim") if name else None)
-    return pic
+    sp = rect(slide, x, y, w, h, line=WHITE, lw=0.75, line_opacity=16,
+              name=name or "Glass %d" % _glass_n[0])
+    _, rid = slide.part.get_or_add_image_part(path)
+    spPr = sp._element.spPr
+    spPr.remove(spPr.find(qn('a:noFill')))
+    spPr.find(qn('a:prstGeom')).addnext(parse_xml(
+        '<a:blipFill xmlns:a="http://schemas.openxmlformats.org/drawingml/'
+        '2006/main" xmlns:r="http://schemas.openxmlformats.org/'
+        'officeDocument/2006/relationships" rotWithShape="1">'
+        '<a:blip r:embed="%s"><a:alphaModFix amt="%d"/></a:blip>'
+        '<a:stretch><a:fillRect/></a:stretch></a:blipFill>'
+        % (rid, GLASS_OPACITY * 1000)))
+    return sp
 
 def photo(slide, x, y, w, h, caption, name):
     """Designed space for one of Diego's photos. Delete the label, drop the
@@ -325,9 +332,12 @@ LEVELS = [
      "Troubleshooting, training others, Lean and continuous improvement."),
 ]
 CW, CG = 2.97, 0.30
+# Outer cards reuse the panel names, so the two panels of the slide before
+# morph into the first and last card, and back out into the next slide.
+CARD_NAMES = ("!! Glass A", "!! Card 2", "!! Card 3", "!! Glass B")
 for i, (letter, title, body) in enumerate(LEVELS):
     x = 0.28 + i * (CW + CG)
-    glass(s, x, 1.85, CW, 3.35, name="!! Card %d" % (i + 1))
+    glass(s, x, 1.85, CW, 3.35, name=CARD_NAMES[i])
     text(s, x + 0.34, 2.15, CW - 0.6, 0.6, letter, 30, ACC, bold=True)
     text(s, x + 0.34, 2.90, CW - 0.6, 0.7, title, 16, TXT, bold=True)
     tb, tf = txbox(s, x + 0.34, 3.72, CW - 0.62, 1.4)
@@ -558,7 +568,8 @@ TRAIN = [("01", "Reviewed",
           "be compared week by week.")]
 for i, (n, t, d) in enumerate(TRAIN):
     x = 0.28 + i * 4.37
-    glass(s, x, 1.85, 4.05, 3.35, name="!! Card %d" % (i + 1))
+    glass(s, x, 1.85, 4.05, 3.35,
+          name=("!! Glass A", "!! Card 2", "!! Glass B")[i])
     text(s, x + 0.36, 2.15, 3.3, 0.55, n, 30, ACC, bold=True)
     text(s, x + 0.36, 2.90, 3.3, 0.35, t, 16, TXT, bold=True)
     tb, tf = txbox(s, x + 0.36, 3.40, 3.33, 1.6)

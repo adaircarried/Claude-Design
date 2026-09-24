@@ -85,14 +85,26 @@ crops to `build/glass/`, which is ignored by git.
 Every slide uses **Morph**, with a fade fallback for PowerPoint versions older
 than 2016.
 
-Titles are named `!! Title 1`. Panels that repeat from slide to slide share
-`!!` names, so PowerPoint slides and resizes them instead of cross-fading:
+Morph pairs objects by their `!!` name, but only when both are **the same
+kind of object**. A picture never morphs into a rectangle, even with the same
+name. That is why every panel is one rectangle. On dark slides the copied
+background is that rectangle's picture fill, and on white slides the
+rectangle has a flat tint.
 
-- `!! Glass A` and `!! Glass B`
-- `!! Card 1` to `!! Card 4`
-- `!! Strip`
+Names that carry from slide to slide:
 
-Keep those names if you edit the slides.
+- `!! Title 1` and `!! Subtitle 1`.
+- `!! Glass A` for the left panel and `!! Glass B` for the right one.
+- On the card slides (4 and 11), the first card is `!! Glass A` and the last
+  card is `!! Glass B`. That way the two panels split into the cards and join
+  back together on the next slide.
+
+To keep the animation working when you edit:
+
+1. Keep the names. Rename a shape in Home > Arrange > Selection Pane.
+2. Do not replace a panel with a picture. To show a photo inside a panel,
+   put the photo on top of it.
+3. Do not copy and paste a panel as a picture.
 
 ## Photos
 
