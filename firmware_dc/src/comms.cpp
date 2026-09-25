@@ -10,6 +10,7 @@
 #include "telemetry.h"
 #include "control.h"
 #include "console.h"
+#include <driver/gpio.h>
 
 static uint16_t s_speed    = SPEED_PCT_DEFAULT;
 static int8_t   s_cal_axis = -1;
@@ -165,6 +166,7 @@ static void cmd_help() {
         "  DB <eje> <grados> <pwm_min>  zona muerta y PWM minimo\n"
         "  LIMIT <pwm>             limite de PWM (100..1023)\n"
         "  FRIC <eje>              mide el PWM minimo que mueve el eje\n"
+        "  ENC                     diagnostico: niveles A/B y cuentas en vivo\n"
         "  SPEED <1-100>  ACCEL <grados/s2>\n"
         "  STOP  STATUS  RESET  SAVE  FACTORY\n"
         "  TELEM ON|OFF            telemetria cada 100 ms\n"
@@ -347,6 +349,30 @@ static void cmd_fric(char *arg) {
     con_printf("Sugerido: DB %d 0.5 %d   (pwm_min = 80%% del menor)\n", ax + 1, m * 8 / 10);
 }
 
+// Diagnóstico de encoders: nivel eléctrico crudo de A/B y cuentas, cada
+// 200 ms, hasta que llegue cualquier línea. Separa fallas de cableado /
+// alimentación (los niveles no cambian) de fallas de conteo (cambian pero
+// las cuentas no).
+static void cmd_enc() {
+    con_printf("ENC: gire los ejes DESPACIO. Cualquier tecla + Enter para salir.\n");
+    con_printf("A/B = nivel del pin (0/1). cnt = cuentas del PCNT.\n");
+    char line[32];
+    for (int n = 0; n < 300; n++) {            // máx. 60 s
+        if (read_line(line, sizeof(line))) break;
+        int64_t c[NUM_AXES];
+        state_lock();
+        for (uint8_t i = 0; i < NUM_AXES; i++) c[i] = g_state.st[i].counts;
+        state_unlock();
+        con_printf("J1: A=%d B=%d cnt=%6lld   |   J2: A=%d B=%d cnt=%6lld\n",
+                   gpio_get_level((gpio_num_t)PIN_ENC_A[0]), gpio_get_level((gpio_num_t)PIN_ENC_B[0]),
+                   (long long)c[0],
+                   gpio_get_level((gpio_num_t)PIN_ENC_A[1]), gpio_get_level((gpio_num_t)PIN_ENC_B[1]),
+                   (long long)c[1]);
+        vTaskDelay(pdMS_TO_TICKS(200));
+    }
+    con_printf("ENC terminado\n");
+}
+
 static void handle(char *line) {
     upcase(line);
     char *cmd = strtok(line, " \t,");
@@ -486,6 +512,7 @@ static void handle(char *line) {
         return;
     }
     if (!strcmp(cmd, "FRIC"))  { cmd_fric(a1); return; }
+    if (!strcmp(cmd, "ENC"))   { cmd_enc(); return; }
     if (!strcmp(cmd, "TEST"))  { cmd_test(a1, a2); return; }
     if (!strcmp(cmd, "SWEEP")) { cmd_sweep(a1, a2, a3, a4, a5); return; }
 

@@ -382,6 +382,7 @@ A 115200 baudios. No distingue mayúsculas. `eje` puede ser `1`, `2`, `J1` o `J2
 | `STATUS` | Objetivo, real, error, velocidad, PWM y cuentas por eje; posición del efector; ganancias; salud del lazo |
 | `TELEM ON\|OFF` | Telemetría cada 100 ms: `r1,q1,e1,pwm1,r2,q2,e2,pwm2,fault` |
 | `FRIC <eje>` | Mide el PWM mínimo que mueve el eje (lazo abierto) |
+| `ENC` | Diagnóstico: nivel crudo (0/1) de A y B de cada encoder y cuentas, cada 200 ms; Enter para salir |
 | `TEST <ciclos> <grados>` | Ida y vuelta con MOVJ en ambos ejes; reporta el error final medio, máximo y acumulado, y el de seguimiento |
 | `SWEEP <SPEED\|ACCEL> <ini> <fin> <inc> <ciclos>` | Repite TEST (±45°) en cada nivel e imprime una tabla separada por `;` para Excel |
 | `RESET` | Borra las fallas; la referencia pasa a ser la posición actual |
