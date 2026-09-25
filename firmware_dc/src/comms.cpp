@@ -36,6 +36,15 @@ static bool read_line(char *out, size_t n) {
     return false;
 }
 
+// Devuelve true si llegó cualquier byte (incluido un Enter solo) y descarta
+// lo pendiente. Se usa para detener SPIN / ENC con solo presionar Enter.
+static bool any_input() {
+    bool got = false;
+    while (Serial.available()) { Serial.read(); got = true; }
+    if (got) s_len = 0;
+    return got;
+}
+
 static void upcase(char *s) { for (; *s; s++) *s = toupper((unsigned char)*s); }
 
 static bool parse_f(const char *tok, float &out) {
@@ -358,9 +367,8 @@ static void cmd_fric(char *arg) {
 static void cmd_enc() {
     con_printf("ENC: gire los ejes DESPACIO. Cualquier tecla + Enter para salir.\n");
     con_printf("A/B = nivel del pin (0/1). cnt = cuentas del PCNT.\n");
-    char line[32];
     for (int n = 0; n < 300; n++) {            // máx. 60 s
-        if (read_line(line, sizeof(line))) break;
+        if (any_input()) break;
         int64_t c[NUM_AXES];
         state_lock();
         for (uint8_t i = 0; i < NUM_AXES; i++) c[i] = g_state.st[i].counts;
@@ -393,10 +401,9 @@ static void cmd_spin(char *a1, char *a2) {
     state_lock(); c0 = g_state.st[ax].counts; g_state.ol_axis = ax; g_state.ol_pwm = (int)p; state_unlock();
     con_printf("SPIN J%d a PWM %d. Cuente las vueltas del eje de SALIDA y presione Enter para parar.\n",
                ax + 1, (int)p);
-    char line[32];
     int64_t c = c0;
     for (int n = 0; n < 1200; n++) {           // máx. 60 s
-        if (read_line(line, sizeof(line)) || any_fault()) break;
+        if (any_input() || any_fault()) break;
         vTaskDelay(pdMS_TO_TICKS(50));
         if (n % 6 == 0) {
             state_lock(); c = g_state.st[ax].counts; state_unlock();
