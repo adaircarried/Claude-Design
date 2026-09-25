@@ -5,9 +5,9 @@
 //  un pin o la geometría del brazo, solo se toca este archivo.
 //
 //  Hardware de referencia:
-//    - ESP32 DevKit V1 (ESP32-WROOM-32, doble núcleo 240 MHz)
+//    - ESP-32S NodeMCU (módulo ESP-32S = ESP32-D0WD, igual al WROOM-32)
 //    - 2x GM25-370 12 V, 140 rpm (reducción ~1:34) con encoder Hall
-//    - Puente H L298N, fuente 12 V >= 3 A, tierra común con el ESP32
+//    - Driver TB6612FNG (MOSFET), VM = 12 V, VCC = 3.3 V, tierra común
 // =============================================================================
 #pragma once
 #include <Arduino.h>
@@ -20,18 +20,21 @@
 #define AXIS_2   1   // J2, codo   (q2)
 
 // ----------------------------------------------------------------------------
-//  Pines L298N  (verificados contra las restricciones del ESP32 clásico:
+//  Pines TB6612FNG (verificados contra las restricciones del ESP32 clásico:
 //  ninguno está en 6-11 (flash), 34-39 (solo entrada) ni es de arranque
 //  salvo GPIO 14, que emite PWM brevemente al arrancar: inofensivo porque
-//  IN3/IN4 están en bajo -> el puente queda en "coast").
+//  GPIO 4 (STBY) tiene pull-down interno en reset -> driver apagado.)
 // ----------------------------------------------------------------------------
-static const uint8_t PIN_PWM[NUM_AXES] = {25, 14};   // ENA, ENB
-static const uint8_t PIN_INA[NUM_AXES] = {26, 32};   // IN1, IN3
-static const uint8_t PIN_INB[NUM_AXES] = {27, 33};   // IN2, IN4
+static const uint8_t PIN_PWM[NUM_AXES] = {25, 14};   // PWMA, PWMB
+static const uint8_t PIN_INA[NUM_AXES] = {26, 32};   // AIN1, BIN1
+static const uint8_t PIN_INB[NUM_AXES] = {27, 33};   // AIN2, BIN2
+// STBY en bajo apaga ambos canales (salidas en alta impedancia). Se usa como
+// corte duro ante una falla. GPIO 4 no es pin de arranque.
+#define PIN_STBY 4
 
 // ----------------------------------------------------------------------------
 //  Pines de encoder (canal A = amarillo, canal B = verde)
-//  GPIO 16/17 son libres en el DevKit V1 (WROOM). En un módulo WROVER están
+//  GPIO 16/17 son libres en el ESP-32S NodeMCU (sin PSRAM). En un módulo WROVER están
 //  ocupados por la PSRAM: si fuera el caso, mover a 4/5 o 21/22.
 // ----------------------------------------------------------------------------
 static const uint8_t PIN_ENC_A[NUM_AXES] = {16, 18};
@@ -71,13 +74,14 @@ static const float DEFAULT_CPR[NUM_AXES] = {1496.0f, 748.0f};
 // ----------------------------------------------------------------------------
 //  PWM (periférico LEDC)
 // ----------------------------------------------------------------------------
-#define PWM_FREQ_HZ     20000          // > 20 kHz audible; el L298N aún conmuta bien
+#define PWM_FREQ_HZ     20000          // audible < 20 kHz; TB6612 soporta hasta 100 kHz
 #define PWM_RES_BITS    10
 #define PWM_MAX         1023           // 2^10 - 1
 static const uint8_t PWM_CHANNEL[NUM_AXES] = {0, 1};
 
-// Límite de PWM aplicado (protección térmica y de corriente). 90 % ≈ 9 V
-// efectivos en el motor tras la caída del L298N.
+// Límite de PWM aplicado (protección térmica y de corriente). El TB6612 da
+// 1.2 A continuos por canal (3.2 A pico) y el GM25-370 consume ~1.1 A
+// bloqueado a 12 V: 90 % deja margen. La caída del TB6612 es solo ~0.5 V.
 #define PWM_LIMIT_DEFAULT  920
 
 // ----------------------------------------------------------------------------
@@ -94,8 +98,8 @@ static const uint8_t PWM_CHANNEL[NUM_AXES] = {0, 1};
 #define PID_KP_DEFAULT   60.0f         // 5° de error -> 300 de PWM (~30 %)
 #define PID_KI_DEFAULT   20.0f
 #define PID_KD_DEFAULT   1.0f
-// Feed-forward de velocidad (PWM por °/s). El motor da ~700 °/s con PWM 1023
-// => ideal ~1.46. Se usa 1.0 (subcompensa, seguro). Sin él, el integrador
+// Feed-forward de velocidad (PWM por °/s). El motor da ~840 °/s con PWM 1023
+// => ideal ~1.2. Se usa 1.0 (subcompensa, seguro). Sin él, el integrador
 // tiene que "cargar" durante el movimiento y provoca sobrepaso al llegar.
 #define PID_KFF_DEFAULT  1.0f
 #define PID_DEADBAND_DEFAULT 0.5f      // grados
@@ -105,8 +109,8 @@ static const uint8_t PWM_CHANNEL[NUM_AXES] = {0, 1};
 
 // ----------------------------------------------------------------------------
 //  Perfil de movimiento
-//  GM25-370 12 V / 140 rpm: sin carga ~840 °/s a 12 V, ~700 °/s con los ~10 V
-//  que entrega el L298N. SPEED 100 % se fija muy por debajo para tener
+//  GM25-370 12 V / 140 rpm: sin carga ~840 °/s a 12 V (el TB6612 casi no
+//  tiene caída). SPEED 100 % se fija muy por debajo para tener
 //  margen de par y que el PID pueda seguir el perfil.
 // ----------------------------------------------------------------------------
 #define VMAX_JOINT_DEG_S     180.0f    // SPEED 100 % en articulares

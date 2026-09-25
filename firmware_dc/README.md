@@ -1,8 +1,8 @@
 # Firmware: brazo planar 2 GDL con motorreductores DC y encoder (ESP32)
 
 Control de Robots: control de posición en lazo cerrado de dos motorreductores
-**GM25-370 (12 V, 140 rpm, reducción ~1:34)** con encoder Hall, puente H **L298N**
-y **ESP32 DevKit V1**. Es un PID a 200 Hz con perfil trapezoidal, movimiento
+**GM25-370 (12 V, 140 rpm, reducción ~1:34)** con encoder Hall, driver
+**TB6612FNG** y **ESP-32S NodeMCU**. Es un PID a 200 Hz con perfil trapezoidal, movimiento
 coordinado de dos ejes y tareas FreeRTOS ancladas por núcleo.
 
 ---
@@ -29,12 +29,12 @@ coordinado de dos ejes y tareas FreeRTOS ancladas por núcleo.
 
 | Pts | Criterio | Implementación | Dónde |
 |---|---|---|---|
-| 10 | Electrónica de potencia | L298N con los 12 V de motores separados de la lógica (ESP32 por USB), tierra común, jumpers ENA/ENB retirados, capacitores de desacoplo | §4 |
-| 10 | Dirección y velocidad/posición | IN1/IN2 dan la dirección y el PWM por **LEDC** (20 kHz, 10 bits) da la magnitud; posicionamiento con `JOG`, `MOVJ` y `MOVL` | `motor.cpp` |
+| 10 | Electrónica de potencia | TB6612FNG (puente H MOSFET): VM = 12 V de potencia separado de VCC = 3.3 V de lógica (ESP32 por USB), tierra común, STBY como corte por hardware, capacitores de desacoplo | §4 |
+| 10 | Dirección y velocidad/posición | AIN1/AIN2 dan la dirección y el PWM por **LEDC** (20 kHz, 10 bits) da la magnitud; posicionamiento con `JOG`, `MOVJ` y `MOVL` | `motor.cpp` |
 | 20 | Realimentación con encoder | Encoders leídos por el periférico **PCNT** (hardware, x4 en J1) y PID de posición a **200 Hz** exactos con `vTaskDelayUntil`; también se estima la velocidad | `encoder.cpp`, `control.cpp` |
 | 30 | Varios motores sin bloquear | 4 tareas FreeRTOS ancladas por núcleo, una cola de setpoints y un mutex. PWM y conteo son de hardware. **MOVJ sincronizado**: los dos ejes arrancan y llegan juntos | `main.cpp`, `motion.cpp` |
 | 20 | Perfiles de movimiento | Perfil trapezoidal (triangular si no alcanza vmax) con `SPEED` y `ACCEL`, `STOP` con desaceleración y *feed-forward* de velocidad | `motion.cpp` |
-| 10 | Diagnóstico | Telemetría a 10 Hz. Corte de salida por **motor bloqueado** y por **error de seguimiento**, límite de PWM, medición de fricción (`FRIC`), caracterización (`TEST`, `SWEEP`) y conteo de retrasos del lazo | `control.cpp`, `comms.cpp` |
+| 10 | Diagnóstico | Telemetría a 10 Hz. Corte de salida (y STBY del driver) por **motor bloqueado** y por **error de seguimiento**, límite de PWM, medición de fricción (`FRIC`), caracterización (`TEST`, `SWEEP`) y conteo de retrasos del lazo | `control.cpp`, `comms.cpp` |
 
 ---
 
@@ -94,7 +94,7 @@ firmware_dc/
     setpoint.h          CONTRATO Setpoint_t + motion_submit() (lo único que ve un productor)
     shared_state.*      estado compartido entre tareas + mutex
     encoder.*           PCNT (ESP32Encoder), modo cuadratura y modo 1 canal
-    motor.*             L298N: LEDC 20 kHz / 10 bits + pines de dirección
+    motor.*             TB6612FNG: LEDC 20 kHz / 10 bits + pines de dirección + STBY
     pid.*               PID: anti-windup, D sobre medición, zona muerta, pwm_min, feed-forward
     control.*           TaskControl: lazo de 200 Hz, fallas
     motion.*            TaskMotion: perfil trapezoidal, MOVJ/JOG/MOVL/JOGC/HOME/STOP
@@ -141,40 +141,41 @@ flash y 6 % de la RAM.
 
 | Color | Función | Conexión |
 |---|---|---|
-| Rojo | Motor − | Salida del L298N |
+| Rojo | Motor − | Salida del TB6612 |
 | Negro | GND del encoder | GND del ESP32 |
 | Amarillo | Fase A | GPIO del ESP32 |
 | Verde | Fase B | GPIO del ESP32 (**roto en el motor de J2**: queda sin conectar) |
 | Azul | VCC del encoder | **3V3 del ESP32 (nunca 5 V)** |
-| Blanco | Motor + | Salida del L298N |
+| Blanco | Motor + | Salida del TB6612 |
 
 ### 4.2 Tabla completa
 
 | Desde | Hacia | Nota |
 |---|---|---|
-| **Motor J1 (hombro)**, blanco | L298N OUT1 | |
-| Motor J1, rojo | L298N OUT2 | |
+| **Motor J1 (hombro)**, blanco | TB6612 **AO1** | |
+| Motor J1, rojo | TB6612 **AO2** | |
 | Motor J1, amarillo (A) | ESP32 GPIO 16 | |
 | Motor J1, verde (B) | ESP32 GPIO 17 | |
 | Motor J1, azul | ESP32 3V3 | |
 | Motor J1, negro | ESP32 GND | |
-| **Motor J2 (codo)**, blanco | L298N OUT3 | **este es el motor con el cable verde roto** |
-| Motor J2, rojo | L298N OUT4 | |
+| **Motor J2 (codo)**, blanco | TB6612 **BO1** | **este es el motor con el cable verde roto** |
+| Motor J2, rojo | TB6612 **BO2** | |
 | Motor J2, amarillo (A) | ESP32 GPIO 18 | |
 | Motor J2, verde (B) | sin conectar | GPIO 19 queda libre, reservado |
 | Motor J2, azul | ESP32 3V3 | |
 | Motor J2, negro | ESP32 GND | |
-| L298N ENA | ESP32 GPIO 25 | **quitar el jumper de ENA**; usar el pin de señal (el del borde) |
-| L298N IN1 | ESP32 GPIO 26 | |
-| L298N IN2 | ESP32 GPIO 27 | |
-| L298N ENB | ESP32 GPIO 14 | **quitar el jumper de ENB** |
-| L298N IN3 | ESP32 GPIO 32 | |
-| L298N IN4 | ESP32 GPIO 33 | |
-| Fuente +12 V | L298N +12V (VS) | fuente de 12 V y al menos 3 A |
-| Fuente GND | L298N GND | |
-| L298N GND | ESP32 GND | **tierra común obligatoria** |
-| L298N +5V | **nada** | no conectar al ESP32 mientras esté por USB |
-| Jumper del regulador 5 V del L298N | **puesto** | con 12 V es seguro; alimenta la lógica del L298N |
+| TB6612 **PWMA** | ESP32 GPIO 25 | PWM del motor J1 |
+| TB6612 **AIN1** | ESP32 GPIO 26 | |
+| TB6612 **AIN2** | ESP32 GPIO 27 | |
+| TB6612 **PWMB** | ESP32 GPIO 14 | PWM del motor J2 |
+| TB6612 **BIN1** | ESP32 GPIO 32 | |
+| TB6612 **BIN2** | ESP32 GPIO 33 | |
+| TB6612 **STBY** | ESP32 GPIO 4 | **obligatorio**: en bajo el driver no mueve nada; el firmware lo baja ante una falla |
+| TB6612 **VCC** | ESP32 **3V3** | lógica del driver (2.7–5.5 V) |
+| TB6612 **VM** | Fuente **+12 V** | potencia de motores (máx. 15 V; ver §4.4) |
+| TB6612 **GND** | Fuente GND **y** ESP32 GND | **tierra común obligatoria**; la placa trae varios GND, conecta al menos uno a cada lado |
+
+La fuente de 12 V puede ser de **2 A**: el TB6612 limita a 1.2 A por canal.
 
 **¿Por qué el encoder roto va en J2?** Un error angular en J1 se amplifica por
 todo el brazo (hasta 350 mm); en J2 solo por el antebrazo (150 mm). Si
@@ -183,42 +184,48 @@ necesitas cambiarlo de eje, edita `ENC_MODE` en `config.h`.
 ### 4.3 Diagrama
 
 ```
-   FUENTE 12 V ≥3 A                    L298N                              ESP32 DevKit V1
-  ┌──────────────┐           ┌─────────────────────────┐            ┌─────────────────────┐
-  │         +12V ├──────────►│ +12V                    │            │                     │
-  │          GND ├──────────►│ GND ────────────────────┼───────────►│ GND  (tierra común) │
-  └──────────────┘    ┌─────►│ +5V (NO conectar)       │            │                     │
-     470–1000 µF ─────┘      │ [jumper 5V puesto]      │            │ USB ◄── laptop      │
-     entre +12V y GND        │                         │            │                     │
-                             │ ENA ◄───────────────────┼────────────┤ GPIO 25             │
-                             │ IN1 ◄───────────────────┼────────────┤ GPIO 26             │
-                             │ IN2 ◄───────────────────┼────────────┤ GPIO 27             │
-                             │ IN3 ◄───────────────────┼────────────┤ GPIO 32             │
-                             │ IN4 ◄───────────────────┼────────────┤ GPIO 33             │
-                             │ ENB ◄───────────────────┼────────────┤ GPIO 14             │
-                             │                         │            │                     │
-   Motor J1  blanco ◄────────┤ OUT1                    │            │                     │
-             rojo   ◄────────┤ OUT2                    │            │                     │
-   Motor J2  blanco ◄────────┤ OUT3                    │            │                     │
-             rojo   ◄────────┤ OUT4                    │            │                     │
-                             └─────────────────────────┘            │                     │
-   Encoder J1: amarillo ────────────────────────────────────────────► GPIO 16             │
-               verde    ────────────────────────────────────────────► GPIO 17             │
-               azul     ◄──────────────────────────────────────────── 3V3                 │
-               negro    ─────────────────────────────────────────────► GND                │
-   Encoder J2: amarillo ────────────────────────────────────────────► GPIO 18             │
-               verde    ✗ (roto, sin conectar)                        │ GPIO 19 (libre)     │
-               azul     ◄──────────────────────────────────────────── 3V3                 │
-               negro    ─────────────────────────────────────────────► GND                │
-                                                                      └─────────────────────┘
+   FUENTE 12 V                   TB6612FNG                             ESP-32S NodeMCU
+  ┌──────────────┐        ┌───────────────────────┐              ┌──────────────────────┐
+  │         +12V ├───────►│ VM                    │              │                      │
+  │          GND ├───────►│ GND ──────────────────┼─────────────►│ GND  (tierra común)  │
+  └──────────────┘        │ VCC ◄─────────────────┼──────────────┤ 3V3                  │
+   100–470 µF entre       │                       │              │ USB ◄── laptop       │
+   VM y GND, junto al     │ PWMA ◄────────────────┼──────────────┤ GPIO 25              │
+   driver                 │ AIN1 ◄────────────────┼──────────────┤ GPIO 26              │
+                          │ AIN2 ◄────────────────┼──────────────┤ GPIO 27              │
+                          │ PWMB ◄────────────────┼──────────────┤ GPIO 14              │
+                          │ BIN1 ◄────────────────┼──────────────┤ GPIO 32              │
+                          │ BIN2 ◄────────────────┼──────────────┤ GPIO 33              │
+                          │ STBY ◄────────────────┼──────────────┤ GPIO 4               │
+                          │                       │              │                      │
+   Motor J1  blanco ◄─────┤ AO1                   │              │                      │
+             rojo   ◄─────┤ AO2                   │              │                      │
+   Motor J2  blanco ◄─────┤ BO1                   │              │                      │
+             rojo   ◄─────┤ BO2                   │              │                      │
+                          └───────────────────────┘              │                      │
+   Encoder J1: amarillo ─────────────────────────────────────────► GPIO 16              │
+               verde    ─────────────────────────────────────────► GPIO 17              │
+               azul     ◄───────────────────────────────────────── 3V3                  │
+               negro    ─────────────────────────────────────────► GND                  │
+   Encoder J2: amarillo ─────────────────────────────────────────► GPIO 18              │
+               verde    ✗ (roto, sin conectar)                     │ GPIO 19 (libre)      │
+               azul     ◄───────────────────────────────────────── 3V3                  │
+               negro    ─────────────────────────────────────────► GND                  │
+                                                                   └──────────────────────┘
 ```
 
 ### 4.4 Ruido y protección
 
+- **VM máximo 15 V** (recomendado ≤ 13.5 V). Con 12 V hay poco margen para los
+  picos inductivos, así que pon un **electrolítico de 100–470 µF / 25 V entre VM
+  y GND, pegado al driver**, además de lo que traiga la placa. No uses una
+  fuente de 12 V "sin regular" que en vacío entregue 14–16 V: mídela antes.
+- **Corriente:** 1.2 A continuos por canal (3.2 A de pico). El GM25-370 de 12 V
+  consume ~0.16 A nominal y ~1.1 A bloqueado: cabe, pero **justo**. El corte por
+  bloqueo (0.8 s) y `LIMIT` protegen al driver, que además tiene apagado
+  térmico interno.
 - **Capacitor cerámico de 100 nF** soldado entre las terminales de cada motor:
   absorbe el ruido de las escobillas.
-- **Electrolítico de 470–1000 µF / 25 V** entre +12 V y GND en la bornera del
-  L298N: absorbe los picos de corriente al arrancar o invertir.
 - **Separa** los hilos del encoder de los de potencia y trenza el par de cada
   motor.
 - El PCNT tiene un filtro de glitches de 12.5 µs (`ENC_FILTER_APB_CYCLES`).
@@ -226,9 +233,9 @@ necesitas cambiarlo de eje, edita `ENC_MODE` en `config.h`.
   pines que solo toleran 3.3 V.
 - Los GPIO elegidos no están en la flash (6–11), no son solo de entrada (34–39)
   y no son pines de arranque, salvo GPIO 14, que emite PWM un instante al
-  arrancar. Como IN3 e IN4 inician en bajo, el motor queda libre y no pasa nada.
-- En un módulo **WROVER** (con PSRAM), GPIO 16 y 17 están ocupados; en el DevKit
-  V1 (WROOM) están libres.
+  arrancar. STBY (GPIO 4) arranca en bajo, así que el driver sigue apagado y no
+  pasa nada.
+- El ESP-32S NodeMCU no tiene PSRAM, así que GPIO 16 y 17 están libres.
 
 ---
 
@@ -250,10 +257,10 @@ sentido **antihorario**. HOME es el brazo **estirado sobre +X** (q1 = q2 = 0).
 5. **Sentido del motor.** Envía `JOG J1 10`: J1 debe girar 10° en sentido
    antihorario.
    - Si el eje se desboca y aparece `ERROR_SEGUIMIENTO`, el motor está invertido
-     respecto al encoder. Intercambia blanco y rojo en OUT1/OUT2, o pon
+     respecto al encoder. Intercambia blanco y rojo en AO1/AO2, o pon
      `MOTOR_INVERT[0] = true`. Después envía `RESET`.
    - `JOG J2 10` debe girar el antebrazo en sentido antihorario. Si gira al
-     revés, intercambia OUT3/OUT4 o pon `MOTOR_INVERT[1] = true`. En J2 el signo
+     revés, intercambia BO1/BO2 o pon `MOTOR_INVERT[1] = true`. En J2 el signo
      sale del PWM, así que no se desboca, pero la convención de ángulos quedaría
      al revés.
 6. **Calibración** de cada eje (§6).
@@ -316,8 +323,8 @@ IDE 2 (o en el monitor) compara `r1` (referencia) con `q1` (real).
 - **Oscilación sostenida alrededor del objetivo:** kp o ki altos, o `pwm_min`
   demasiado grande. Súbele la zona muerta con `DB 1 1.0 ...`.
 - **Se queda a 1–2° del objetivo:** falta ki o `pwm_min`.
-- **`BLOQUEO` al arrancar:** carga excesiva, 12 V sin conectar o jumper de EN
-  puesto.
+- **`BLOQUEO` al arrancar:** carga excesiva, 12 V sin conectar o STBY sin
+  conectar a GPIO 4.
 - **`retrasos de periodo` > 0 en `STATUS`:** algo bloquea el núcleo 1. No
   debería pasar.
 
@@ -389,20 +396,20 @@ pulsos pero **no sabe la dirección**. El firmware:
 
 | Riesgo | Síntoma | Mitigación |
 |---|---|---|
-| **Sin tierra común** | Motores muertos o erráticos | Unir GND del L298N con GND del ESP32 |
-| **Jumpers ENA/ENB puestos** | El motor va siempre a tope; el PID no controla | Quitarlos |
+| **Sin tierra común** | Motores muertos o erráticos | Unir GND del TB6612 con GND del ESP32 y de la fuente |
+| **STBY o VCC del TB6612 sin conectar** | Nada se mueve; `FRIC` no detecta movimiento | STBY a GPIO 4, VCC a 3V3 |
 | **Encoder a 5 V** | Daño a los GPIO 16–19 | Alimentarlo solo con 3V3 |
 | **Motor y encoder con sentidos opuestos** | Se desboca y aparece `ERROR_SEGUIMIENTO` | §5, paso 5; primeras pruebas con `LIMIT 400` |
-| **Caída del L298N (~2 V)** | Menos velocidad y par; zona muerta de PWM grande | `FRIC` + `DB`; `SPEED 100` es solo 180 °/s (el motor da ~700) |
-| **Fuente débil** | Reinicios del ESP32 o `BLOQUEO` al arrancar los dos motores | Fuente ≥ 3 A, electrolítico en la bornera y `ACCEL` más bajo |
+| **Picos de tensión en VM** (máx. 15 V) | El TB6612 se daña al invertir o frenar | Electrolítico junto al driver, `ACCEL` moderado, fuente regulada de 12 V |
+| **Corriente al límite** (1.2 A por canal) | Apagado térmico del driver al arrancar con carga o si se bloquea | Corte por bloqueo, `LIMIT`, `ACCEL` moderado |
+| **Fuente débil** | Reinicios del ESP32 o `BLOQUEO` al arrancar los dos motores | Fuente ≥ 2 A, electrolítico junto al driver y `ACCEL` más bajo |
 | **Juego del reductor** | Error en la salida que el encoder no ve (está antes del reductor) | Es inherente; aproximarse siempre desde el mismo lado reduce la dispersión |
 | **Ruido de escobillas** | Saltos de cuentas; oscilación rara | Capacitores de 100 nF, hilos separados, filtro del PCNT |
-| **Calentamiento del L298N** | Se apaga térmicamente | Disipador; `LIMIT`; el corte por bloqueo evita estar parado con PWM alto |
+| **Zona muerta de PWM** | El eje se queda corto del objetivo | `FRIC` + `DB` |
 | **Motor bloqueado** | Calentamiento rápido | Corte automático: PWM > 60 % y < 3 °/s durante 0.8 s. Se rearma con `RESET` |
 | **Encoder de un canal (J2)** | Deriva por inercia o empujones | §9; `HOME` periódico |
 | **HOME en otra pose** | MOVL va a otro lado | HOME siempre con el brazo estirado sobre +X |
-| **Módulo WROVER** | Encoder J1 sin cuentas | Mover GPIO 16/17 a otros pines libres |
-| **GPIO 14 al arrancar** | Posible tirón mínimo de J2 | Inofensivo (IN3/IN4 en bajo) |
+| **GPIO 14 al arrancar** | Ninguno | STBY arranca en bajo |
 
 ---
 

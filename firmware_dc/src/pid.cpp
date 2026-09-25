@@ -15,7 +15,7 @@
 //  - Zona muerta: dentro de ±deadband la salida es 0 y el integrador se
 //    congela. Evita que el motor "cace" alrededor del objetivo por la
 //    resolución del encoder y el juego del reductor.
-//  - pwm_min: el L298N + reductor necesitan un ciclo mínimo para moverse. Se
+//  - pwm_min: el motor + reductor necesitan un ciclo mínimo para moverse. Se
 //    suma fuera de la zona muerta para que el lazo no dependa solo del
 //    integrador para vencer la fricción estática.
 // =============================================================================

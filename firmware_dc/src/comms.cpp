@@ -309,7 +309,7 @@ static void cmd_sweep(char *param, char *a1, char *a2, char *a3, char *a4) {
     con_printf("SWEEP terminado; SPEED y ACCEL restaurados.\n");
 }
 
-// Mide el PWM mínimo que mueve el eje (fricción estática + caída del L298N)
+// Mide el PWM mínimo que mueve el eje (fricción estática del motor + reductor)
 // con una rampa en lazo abierto en ambos sentidos. El eje se mueve poco:
 // la rampa se detiene en cuanto se detecta movimiento.
 static void cmd_fric(char *arg) {

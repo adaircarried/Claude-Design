@@ -211,6 +211,10 @@ void task_control(void *arg) {
             else if (pwm[i] < 0) dir[i] = -1;
         }
 
+        // Corte duro por hardware mientras haya falla (STBY del TB6612)
+        static bool stby_on = true;
+        if (any_fault == stby_on) { stby_on = !any_fault; motor_enable(stby_on); }
+
         // ---- 4. Publicar estado -------------------------------------------
         if (state_lock(1)) {
             for (uint8_t i = 0; i < NUM_AXES; i++) {

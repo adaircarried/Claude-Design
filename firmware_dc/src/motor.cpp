@@ -6,14 +6,20 @@
 //  audible. 80 MHz / 2^10 = 78 kHz es el máximo para 10 bits, así que 20 kHz
 //  cabe con holgura.
 //
-//  Dirección: IN_A / IN_B. Velocidad: ciclo de trabajo en EN.
-//  Con PWM 0 se deja IN_A = IN_B = 0 y EN = 0 (coast). Se prefirió coast a
-//  freno activo porque el reductor 1:34 ya sostiene la posición en un brazo
-//  horizontal y el freno de corto en el L298N genera picos de corriente.
+//  TB6612FNG, tabla de verdad (STBY = 1):
+//    IN1 IN2 PWM  -> salida
+//     H   L   H   -> giro CW          H   L   L -> freno corto
+//     L   H   H   -> giro CCW         L   H   L -> freno corto
+//     L   L   x   -> apagado (alta impedancia, eje libre)
+//  Durante el PWM el semiciclo apagado es FRENO CORTO (decaimiento lento):
+//  la velocidad es más lineal con el ciclo de trabajo que en el L298N.
+//  Con PWM 0 se deja IN1 = IN2 = 0: eje libre (necesario para CAL a mano).
 // =============================================================================
 #include "motor.h"
 
 void motor_init() {
+    pinMode(PIN_STBY, OUTPUT);
+    digitalWrite(PIN_STBY, LOW);          // apagado hasta terminar la config
     for (uint8_t i = 0; i < NUM_AXES; i++) {
         pinMode(PIN_INA[i], OUTPUT);
         pinMode(PIN_INB[i], OUTPUT);
@@ -23,7 +29,10 @@ void motor_init() {
         ledcAttachPin(PIN_PWM[i], PWM_CHANNEL[i]);
         ledcWrite(PWM_CHANNEL[i], 0);
     }
+    digitalWrite(PIN_STBY, HIGH);
 }
+
+void motor_enable(bool on) { digitalWrite(PIN_STBY, on ? HIGH : LOW); }
 
 void motor_set(uint8_t axis, int pwm) {
     if (MOTOR_INVERT[axis]) pwm = -pwm;
