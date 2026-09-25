@@ -46,6 +46,24 @@ void storage_save_gains(const PIDGains gains[NUM_AXES]) {
     p.end();
 }
 
+void storage_load_motion(int &pwm_limit, uint16_t &speed_pct, float &accel) {
+    Preferences p;
+    p.begin(NS, true);
+    pwm_limit = p.getInt("lim", pwm_limit);
+    speed_pct = p.getUShort("spd", speed_pct);
+    accel     = p.getFloat("acc", accel);
+    p.end();
+}
+
+void storage_save_motion(int pwm_limit, uint16_t speed_pct, float accel) {
+    Preferences p;
+    p.begin(NS, false);
+    p.putInt("lim", pwm_limit);
+    p.putUShort("spd", speed_pct);
+    p.putFloat("acc", accel);
+    p.end();
+}
+
 void storage_clear() {
     Preferences p;
     p.begin(NS, false);

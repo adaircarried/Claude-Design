@@ -393,7 +393,7 @@ A 115200 baudios. No distingue mayúsculas. `eje` puede ser `1`, `2`, `J1` o `J2
 | `TEST <ciclos> <grados>` | Ida y vuelta con MOVJ en ambos ejes; reporta el error final medio, máximo y acumulado, y el de seguimiento |
 | `SWEEP <SPEED\|ACCEL> <ini> <fin> <inc> <ciclos>` | Repite TEST (±45°) en cada nivel e imprime una tabla separada por `;` para Excel |
 | `RESET` | Borra las fallas; la referencia pasa a ser la posición actual |
-| `SAVE` / `FACTORY` | Guarda las ganancias en NVS / borra la NVS |
+| `SAVE` / `FACTORY` | Guarda en NVS las ganancias (PID, FF, DB) de ambos ejes y LIMIT, SPEED y ACCEL / borra la NVS |
 
 **Órdenes encoladas:** las órdenes de movimiento se ejecutan en secuencia. Puedes
 mandar varias seguidas, como un programa de robot. `STOP` se salta la cola.

@@ -40,6 +40,7 @@ void setup() {
     console_init();
     shared_state_init();
     storage_load(g_state.cpr, g_state.gains);
+    storage_load_motion(g_state.pwm_limit, g_state.speed_pct, g_state.accel);
     for (uint8_t i = 0; i < NUM_AXES; i++) g_state.req_gains[i] = true;
 
     encoder_init();

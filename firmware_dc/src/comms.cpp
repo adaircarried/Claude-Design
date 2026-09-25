@@ -576,9 +576,12 @@ static void handle(char *line) {
     }
     if (!strcmp(cmd, "SAVE")) {
         PIDGains g[NUM_AXES];
-        state_lock(); memcpy(g, g_state.gains, sizeof(g)); state_unlock();
+        int lim; float acc;
+        state_lock(); memcpy(g, g_state.gains, sizeof(g)); lim = g_state.pwm_limit; acc = g_state.accel; state_unlock();
         storage_save_gains(g);
-        con_printf("OK ganancias guardadas en NVS\n");
+        storage_save_motion(lim, s_speed, acc);
+        con_printf("OK guardado en NVS: PID/FF/DB de ambos ejes, LIMIT=%d, SPEED=%u%%, ACCEL=%.0f\n",
+                   lim, s_speed, acc);
         return;
     }
     if (!strcmp(cmd, "FACTORY")) {
@@ -601,7 +604,10 @@ static void handle(char *line) {
 // -----------------------------------------------------------------------------
 void task_comms(void *arg) {
     char line[128];
+    s_speed = g_state.speed_pct;
     con_printf("\n=== Brazo 2GDL - control DC con encoder (ESP32) ===\n");
+    con_printf("LIMIT=%d SPEED=%u%% ACCEL=%.0f (guardados con SAVE)\n",
+               g_state.pwm_limit, s_speed, g_state.accel);
     con_printf("CPR J1=%.0f J2=%.0f | encoder J1=%s J2=%s\n", g_state.cpr[0], g_state.cpr[1],
                ENC_MODE[0] == ENC_QUADRATURE ? "cuadratura x4" : "1 canal x2",
                ENC_MODE[1] == ENC_QUADRATURE ? "cuadratura x4" : "1 canal x2");

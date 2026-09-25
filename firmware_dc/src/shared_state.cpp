@@ -13,6 +13,7 @@ void shared_state_init() {
     g_state.ol_axis   = -1;
     g_state.pwm_limit = PWM_LIMIT_DEFAULT;
     g_state.accel     = ACCEL_DEFAULT_DEG_S2;
+    g_state.speed_pct = SPEED_PCT_DEFAULT;
     for (uint8_t i = 0; i < NUM_AXES; i++) {
         g_state.cpr[i] = DEFAULT_CPR[i];
         g_state.gains[i] = {PID_KP_DEFAULT, PID_KI_DEFAULT, PID_KD_DEFAULT,

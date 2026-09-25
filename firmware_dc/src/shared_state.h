@@ -70,6 +70,7 @@ struct SharedState {
     uint32_t   moves_done;            // contador de órdenes terminadas
     float      move_max_err[NUM_AXES];// |error| máximo durante el último movimiento
     float      accel;                 // ACCEL actual (°/s²)
+    uint16_t   speed_pct;             // SPEED inicial (lo usa TaskComms)
 };
 
 extern SharedState       g_state;

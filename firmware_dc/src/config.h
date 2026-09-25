@@ -57,7 +57,7 @@ static const EncoderMode ENC_MODE[NUM_AXES] = {ENC_QUADRATURE, ENC_SINGLE};
 //                cables del motor en la bornera).
 //  ENC_INVERT  : invierte el signo de la lectura del encoder (solo tiene
 //                efecto en modo cuadratura).
-static const bool MOTOR_INVERT[NUM_AXES] = {false, false};
+static const bool MOTOR_INVERT[NUM_AXES] = {true, false};
 static const bool ENC_INVERT[NUM_AXES]   = {false, false};
 
 // Filtro de glitches del PCNT en ciclos de APB (80 MHz -> 12.5 ns). 1000 ~ 12.5 us.
