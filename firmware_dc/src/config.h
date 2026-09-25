@@ -65,11 +65,12 @@ static const bool ENC_INVERT[NUM_AXES]   = {false, false};
 #define ENC_FILTER_APB_CYCLES 1000
 
 // Cuentas por vuelta del EJE DE SALIDA por defecto (antes de calibrar).
-// GM25-370 140 rpm -> reducción 1:34; encoder Hall típico de 11 PPR.
-//   cuadratura x4 : 11 * 4 * 34 = 1496
-//   un canal  x2 : 11 * 2 * 34 =  748
-// La rutina CAL mide el valor real y lo guarda en NVS (Preferences).
-static const float DEFAULT_CPR[NUM_AXES] = {1496.0f, 748.0f};
+// Medido con SPIN en los motores reales: J1 = 1973 cuentas/vuelta en x4,
+// que corresponde a encoder de 11 PPR con reducción ~1:45 (11*4*45 = 1980).
+//   cuadratura x4 : 11 * 4 * 45 = 1980
+//   un canal  x2 : 11 * 2 * 45 =  990
+// CAL / SPIN + CPR miden el valor real y lo guardan en NVS (Preferences).
+static const float DEFAULT_CPR[NUM_AXES] = {1980.0f, 990.0f};
 
 // ----------------------------------------------------------------------------
 //  PWM (periférico LEDC)

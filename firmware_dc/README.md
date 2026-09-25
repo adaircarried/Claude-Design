@@ -314,13 +314,13 @@ el firmware convierte cuentas a grados.
    cero.
 5. Repite con `CAL J2`. `CAL ABORT` cancela sin guardar.
 
-**Valores esperados** para el GM25-370 140 rpm (1:34, encoder de 11 PPR):
+**Valores medidos** en los motores de este proyecto: J1 dio 1973 cuentas por
+vuelta en x4, lo que corresponde a un encoder de 11 PPR con reducción ~1:45:
 
-- J1 en cuadratura x4: ≈ 11 × 4 × 34 = **1496** cuentas.
-- J2 en un canal x2: ≈ **748** cuentas.
+- J1 en cuadratura x4: ≈ 11 × 4 × 45 = **1980** cuentas.
+- J2 en un canal x2: ≈ 11 × 2 × 45 = **990** cuentas, si es el mismo modelo de motor.
 
-Si te sale un valor muy distinto (por ejemplo, la mitad), revisa el encoder. Si
-tu encoder es de 12 PPR, esperarías unas 1632 y 816.
+Si te sale un valor muy distinto (por ejemplo, la mitad), revisa el encoder.
 
 **Si el eje no se puede girar a mano** (reductor duro o brazo montado), calibra
 con el motor: marca el eje de salida y envía `SPIN J1 250`. Cuenta 3 vueltas completas
@@ -426,7 +426,7 @@ pulsos pero **no sabe la dirección**. El firmware:
   ejecuta `TEST 20 45` y observa si J2 regresa a la marca. Es un buen dato para
   el reporte.
 - Si reparas el cable, conecta el verde a GPIO 19, cambia `ENC_MODE[1]` a
-  `ENC_QUADRATURE`, cambia `DEFAULT_CPR[1]` a 1496 y recalibra.
+  `ENC_QUADRATURE`, cambia `DEFAULT_CPR[1]` a 1980 y recalibra.
 
 ---
 

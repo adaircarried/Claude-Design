@@ -415,16 +415,22 @@ static void cmd_spin(char *a1, char *a2) {
             con_printf("  cuentas: %lld\n", (long long)(c - c0));
         }
     }
-    state_lock(); g_state.ol_pwm = 0; state_unlock();
+    // Cuentas en el instante del Enter: lo que gire después por inercia no
+    // forma parte de las N vueltas que contó el usuario.
+    state_lock(); c = g_state.st[ax].counts; g_state.ol_pwm = 0; state_unlock();
     vTaskDelay(pdMS_TO_TICKS(500));             // deja que se detenga
+    int64_t c_end;
     state_lock();
-    c = g_state.st[ax].counts;
+    c_end = g_state.st[ax].counts;
     g_state.ol_axis = -1;
     g_state.req_fault_reset = true;             // referencia = posición actual
     state_unlock();
     long long d = (long long)(c - c0);
     if (d < 0) d = -d;
-    con_printf("SPIN J%d: %lld cuentas en total.\n", ax + 1, d);
+    long long coast = (long long)(c_end - c);
+    if (coast < 0) coast = -coast;
+    con_printf("SPIN J%d: %lld cuentas al presionar Enter (+%lld por inercia al frenar, no incluidas).\n",
+               ax + 1, d, coast);
     con_printf("Si dio N vueltas: CPR = %lld / N. Guardelo con:  CPR %d <valor>\n", d, ax + 1);
     con_printf("  (1 vuelta = %lld, 3 vueltas = %.0f, 5 vueltas = %.0f)\n", d, d / 3.0, d / 5.0);
 }
