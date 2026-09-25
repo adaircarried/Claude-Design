@@ -15,12 +15,40 @@ the 4M improvement and the training process update.
 
 ## Files
 
-- `Tenneco_Robotics_Setter_Diego_de_Leon.pptx` is the deck. The speaker notes
-  are not a script. Each slide carries only the key points not to forget.
-- `Tenneco_Robotics_Setter_Diego_de_Leon.pdf` is a read-only preview.
+- `Tenneco_Robotics_Setter_Diego_de_Leon_V3.pptx` is the current deck: the
+  supervisor's review, applied on top of his own edits. The speaker notes
+  carry only the key points not to forget.
+- `Tenneco_Robotics_Setter_Diego_de_Leon_V3.pdf` is a read-only preview.
   LibreOffice renders it without Segoe UI, so lines wrap a little earlier
   than they do in PowerPoint.
-- `deck.py` is the generator.
+- `Tenneco_Robotics_Setter_Diego_de_Leon_V2.pptx` is the supervisor's
+  hand-edited version, with Diego's photos. V3 is built from it.
+- `revise_v3.py` turns V2 into V3. It edits V2 in place, so the
+  supervisor's changes and the photos are kept.
+- `deck.py` generated V1, before the review. It is kept for reference and no
+  longer describes the current deck.
+
+## Supervisor review (V2 to V3)
+
+1. **Gantt instead of the timeline** (slide 5). The template asks for one
+   explicitly. It shows weeks 32 to 53, real in green and plan in light blue
+   (the plant Excel's colours), today's date, and the Level I exam in
+   week 40.
+2. **Level I is not complete** (slides 6, 7 and 13). Five topics mastered:
+   safety, GMAW equipment, process variables, discontinuities and control
+   documents. Four still open: metal transfer, joints, positions and
+   symbols.
+3. **The ILUO matrix as the plan** (slide 4). The objective, then one row per
+   level: what it covers, how it is validated, the hours and the method.
+   That adds up to 40 hours of formal training.
+
+Also in V3:
+
+- The supervisor's wording is kept, cleaned of long dashes and typos.
+- The numbers now agree across slides:
+  - 90% industrialization and 10% cell support.
+  - Level L in October, U and O in November and December.
+  - The exam in week 40.
 
 ## Rebuilding
 
@@ -30,8 +58,10 @@ path:
 
 ```bash
 pip install python-pptx pillow
-python3 deck.py /path/to/Presentacion_de_becarios.pptx
+python3 revise_v3.py Tenneco_Robotics_Setter_Diego_de_Leon_V2.pptx /path/to/Presentacion_de_becarios.pptx
 ```
+
+The template is only read for its road background, to cut the glass panels.
 
 ## Storyline
 
@@ -40,11 +70,11 @@ python3 deck.py /path/to/Presentacion_de_becarios.pptx
 | 1 | Title | Program information |
 | 2 | Win | The Tenneco value |
 | 3 | Program scope and objective | The official objective and both halves of the final project |
-| 4 | Four levels | I, L, U and O, in plain words |
-| 5 | Eight weeks in, fourteen to go | Timeline, with today highlighted |
-| 6 | Level I | The five topics and how they were learned |
-| 7 | Four skills on my own | Progress on the 23 skills, one dot per skill |
-| 8 | Industrialization | The Cummins project, 60% of the time, and 40% at the cells |
+| 4 | The plan | The ILUO matrix, paraphrased, under the objective |
+| 5 | Level I exam next, in week 40 | Gantt of skills, done and next |
+| 6 | Level I | Five topics mastered, four still open |
+| 7 | Eleven skills achieved | Progress on the 23 skills, one dot per skill |
+| 8 | Industrialization | MY27 Cummins DOC and DPF program, 90% of the time |
 | 9 | Improvement idea and implementation | 4M: problem, idea and what is running today |
 | 10 | Results | Cycle time 174 s to 93 s, load, weld and unload per part |
 | 11 | Training process update | A proposal: reviewed, found, rebuilt |
@@ -52,10 +82,25 @@ python3 deck.py /path/to/Presentacion_de_becarios.pptx
 | 13 | Conclusions | In place and next |
 | 14 | Thank you | |
 
-The 4M improvement counts as the first skill in progress under *Implementing
-improvement ideas* (Level O), so the totals are 4 on my own, 13 in progress
-and 6 not started. The schedule in `nivel-I/` still lists that skill as not
-started.
+Totals on slide 7:
+
+| Level | Achieved | In progress | Not started |
+|---|---|---|---|
+| I | 5 | 4 | 0 |
+| L | 5 | 0 | 0 |
+| U | 0 | 1 | 2 |
+| O | 1 | 1 | 4 |
+| **Total** | **11** | **6** | **6** |
+
+Where the counts come from:
+
+- Level I follows Diego.
+- Level L follows the supervisor's V2.
+- In Level O, the 4M improvement counts as *Implementing improvement ideas*,
+  in progress.
+
+The schedule in `nivel-I/` predates this review and has not been updated to
+match.
 
 ## Style
 
