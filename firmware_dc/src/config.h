@@ -6,7 +6,7 @@
 //
 //  Hardware de referencia:
 //    - ESP-32S NodeMCU (módulo ESP-32S = ESP32-D0WD, igual al WROOM-32)
-//    - 2x GM25-370 12 V, 140 rpm (reducción ~1:34) con encoder Hall
+//    - 2x GM25-370 12 V con encoder Hall de 11 PPR; reducción medida ~1:45
 //    - Driver TB6612FNG (MOSFET), VM = 12 V, VCC = 3.3 V, tierra común
 // =============================================================================
 #pragma once

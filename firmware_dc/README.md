@@ -1,7 +1,7 @@
 # Firmware: brazo planar 2 GDL con motorreductores DC y encoder (ESP32)
 
 Control de Robots: control de posición en lazo cerrado de dos motorreductores
-**GM25-370 (12 V, 140 rpm, reducción ~1:34)** con encoder Hall, driver
+**GM25-370 (12 V, reducción medida ~1:45)** con encoder Hall, driver
 **TB6612FNG** y **ESP-32S NodeMCU**. Es un PID a 200 Hz con perfil trapezoidal, movimiento
 coordinado de dos ejes y tareas FreeRTOS ancladas por núcleo.
 
@@ -418,7 +418,7 @@ pulsos pero **no sabe la dirección**. El firmware:
 
 - **Sobrepaso o rebote:** si el eje se mueve por inercia en contra del PWM, esas
   cuentas se suman con el signo equivocado y el error se acumula. En este brazo
-  horizontal con reductor 1:34, el efecto es pequeño.
+  horizontal con reductor ~1:45, el efecto es pequeño.
 - **Empujar el brazo a mano** con los motores activos o sin par descuadra J2.
   Después haz `HOME`.
 - **Resolución:** 0.48° por cuenta en J2 contra 0.24° en J1.
@@ -461,7 +461,7 @@ pulsos pero **no sabe la dirección**. El firmware:
 - **TEST y SWEEP corren en TaskComms**, que se comporta como un productor más de
   la cola: encola MOVJ y espera. Así no se toca TaskMotion ni el control.
 - **Límites articulares fijos** (q1 ±170°, q2 ±150°) en `config.h`.
-- **Coast (sin freno) con PWM 0:** el reductor 1:34 sostiene la posición en un
+- **Coast (sin freno) con PWM 0:** el reductor ~1:45 sostiene la posición en un
   brazo horizontal, y así se evitan picos de corriente del freno de corto.
 
 Ninguna de estas simplificaciones quita puntos de la rúbrica.

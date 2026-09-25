@@ -16,7 +16,7 @@
 //  Limitación: si el eje se mueve por inercia en sentido contrario al PWM
 //  (rebote, sobrepaso, empujón externo), esas cuentas se suman con el signo
 //  equivocado. En un brazo planar horizontal, sin gravedad sobre los ejes y con
-//  reductor 1:34, el efecto es pequeño.
+//  reductor ~1:45, el efecto es pequeño.
 // =============================================================================
 #include "encoder.h"
 #include <ESP32Encoder.h>
