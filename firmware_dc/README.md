@@ -322,6 +322,11 @@ el firmware convierte cuentas a grados.
 Si te sale un valor muy distinto (por ejemplo, la mitad), revisa el encoder. Si
 tu encoder es de 12 PPR, esperarías unas 1632 y 816.
 
+**Si el eje no se puede girar a mano** (reductor duro o brazo montado), calibra
+con el motor: marca el eje de salida y envía `SPIN J1 250`. Cuenta 3 vueltas completas
+y presiona Enter justo cuando la marca pase por tercera vez. Divide las cuentas
+reportadas entre 3 y guarda el resultado con `CPR 1 <valor>`.
+
 **Consejo:** para mayor precisión, gira 5 vueltas y divide entre 5. Para eso
 cambia `CAL END` y escribe el valor a mano en `DEFAULT_CPR` de `config.h`.
 
@@ -383,6 +388,8 @@ A 115200 baudios. No distingue mayúsculas. `eje` puede ser `1`, `2`, `J1` o `J2
 | `TELEM ON\|OFF` | Telemetría cada 100 ms: `r1,q1,e1,pwm1,r2,q2,e2,pwm2,fault` |
 | `FRIC <eje>` | Mide el PWM mínimo que mueve el eje (lazo abierto) |
 | `ENC` | Diagnóstico: nivel crudo (0/1) de A y B de cada encoder y cuentas, cada 200 ms; Enter para salir |
+| `SPIN <eje> <pwm>` | Gira en lazo abierto hasta Enter y reporta las cuentas: sirve para calibrar con el motor contando vueltas |
+| `CPR <eje> <valor>` | Fija y guarda en NVS las cuentas por vuelta del eje de salida |
 | `TEST <ciclos> <grados>` | Ida y vuelta con MOVJ en ambos ejes; reporta el error final medio, máximo y acumulado, y el de seguimiento |
 | `SWEEP <SPEED\|ACCEL> <ini> <fin> <inc> <ciclos>` | Repite TEST (±45°) en cada nivel e imprime una tabla separada por `;` para Excel |
 | `RESET` | Borra las fallas; la referencia pasa a ser la posición actual |

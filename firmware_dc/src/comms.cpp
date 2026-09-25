@@ -167,6 +167,8 @@ static void cmd_help() {
         "  LIMIT <pwm>             limite de PWM (100..1023)\n"
         "  FRIC <eje>              mide el PWM minimo que mueve el eje\n"
         "  ENC                     diagnostico: niveles A/B y cuentas en vivo\n"
+        "  SPIN <eje> <pwm>        gira en lazo abierto hasta Enter (calibrar con motor)\n"
+        "  CPR <eje> <valor>       fija y guarda cuentas por vuelta\n"
         "  SPEED <1-100>  ACCEL <grados/s2>\n"
         "  STOP  STATUS  RESET  SAVE  FACTORY\n"
         "  TELEM ON|OFF            telemetria cada 100 ms\n"
@@ -373,6 +375,61 @@ static void cmd_enc() {
     con_printf("ENC terminado\n");
 }
 
+// Calibración con el motor: gira en lazo abierto con PWM fijo hasta que el
+// usuario presiona Enter. El usuario cuenta las vueltas del eje de salida y
+// luego fija CPR = cuentas / vueltas con el comando CPR.
+static void cmd_spin(char *a1, char *a2) {
+    int ax = parse_axis(a1);
+    float p;
+    if (ax < 0 || !parse_f(a2, p) || fabsf(p) < 50 || fabsf(p) > 700) {
+        con_printf("Uso: SPIN <eje> <pwm 50..700, signo = sentido>\n"); return;
+    }
+    if (!motion_allowed()) return;
+    bool busy;
+    state_lock(); busy = g_state.motion_busy; state_unlock();
+    if (busy) { con_printf("ERR hay un movimiento en curso\n"); return; }
+
+    int64_t c0;
+    state_lock(); c0 = g_state.st[ax].counts; g_state.ol_axis = ax; g_state.ol_pwm = (int)p; state_unlock();
+    con_printf("SPIN J%d a PWM %d. Cuente las vueltas del eje de SALIDA y presione Enter para parar.\n",
+               ax + 1, (int)p);
+    char line[32];
+    int64_t c = c0;
+    for (int n = 0; n < 1200; n++) {           // máx. 60 s
+        if (read_line(line, sizeof(line)) || any_fault()) break;
+        vTaskDelay(pdMS_TO_TICKS(50));
+        if (n % 6 == 0) {
+            state_lock(); c = g_state.st[ax].counts; state_unlock();
+            con_printf("  cuentas: %lld\n", (long long)(c - c0));
+        }
+    }
+    state_lock(); g_state.ol_pwm = 0; state_unlock();
+    vTaskDelay(pdMS_TO_TICKS(500));             // deja que se detenga
+    state_lock();
+    c = g_state.st[ax].counts;
+    g_state.ol_axis = -1;
+    g_state.req_fault_reset = true;             // referencia = posición actual
+    state_unlock();
+    long long d = (long long)(c - c0);
+    if (d < 0) d = -d;
+    con_printf("SPIN J%d: %lld cuentas en total.\n", ax + 1, d);
+    con_printf("Si dio N vueltas: CPR = %lld / N. Guardelo con:  CPR %d <valor>\n", d, ax + 1);
+    con_printf("  (1 vuelta = %lld, 3 vueltas = %.0f, 5 vueltas = %.0f)\n", d, d / 3.0, d / 5.0);
+}
+
+static void cmd_cpr(char *a1, char *a2) {
+    int ax = parse_axis(a1);
+    float v;
+    if (ax < 0 || !parse_f(a2, v) || v < 20 || v > 100000) { con_printf("Uso: CPR <eje> <cuentas_por_vuelta>\n"); return; }
+    storage_save_cpr(ax, v);
+    state_lock();
+    g_state.cpr[ax] = v;
+    g_state.req_zero_mask |= (1u << ax);
+    state_unlock();
+    con_printf("OK CPR J%d = %.1f (%.3f °/cuenta), guardado en NVS. Eje en cero: haga HOME en la pose correcta.\n",
+               ax + 1, v, 360.0f / v);
+}
+
 static void handle(char *line) {
     upcase(line);
     char *cmd = strtok(line, " \t,");
@@ -513,6 +570,8 @@ static void handle(char *line) {
     }
     if (!strcmp(cmd, "FRIC"))  { cmd_fric(a1); return; }
     if (!strcmp(cmd, "ENC"))   { cmd_enc(); return; }
+    if (!strcmp(cmd, "SPIN"))  { cmd_spin(a1, a2); return; }
+    if (!strcmp(cmd, "CPR"))   { cmd_cpr(a1, a2); return; }
     if (!strcmp(cmd, "TEST"))  { cmd_test(a1, a2); return; }
     if (!strcmp(cmd, "SWEEP")) { cmd_sweep(a1, a2, a3, a4, a5); return; }
 
