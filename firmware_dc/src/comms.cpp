@@ -36,12 +36,17 @@ static bool read_line(char *out, size_t n) {
     return false;
 }
 
-// Devuelve true si llegó cualquier byte (incluido un Enter solo) y descarta
-// lo pendiente. Se usa para detener SPIN / ENC con solo presionar Enter.
+// Devuelve true si llegó cualquier byte (incluido un Enter solo). Se usa para
+// detener SPIN / ENC con solo presionar Enter. Las letras NO se descartan: se
+// guardan en el búfer de línea, así un comando que se empezó a escribir
+// mientras el motor giraba llega completo (no se "come" la primera letra).
 static bool any_input() {
     bool got = false;
-    while (Serial.available()) { Serial.read(); got = true; }
-    if (got) s_len = 0;
+    while (Serial.available()) {
+        char c = (char)Serial.read();
+        got = true;
+        if (c != '\r' && c != '\n' && s_len < sizeof(s_buf) - 1) s_buf[s_len++] = c;
+    }
     return got;
 }
 
