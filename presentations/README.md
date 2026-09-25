@@ -46,7 +46,9 @@ Also in V3:
 
 - The supervisor's wording is kept, cleaned of long dashes and typos.
 - The numbers now agree across slides:
-  - 90% industrialization and 10% cell support.
+  - Slide 8 keeps both numbers. 60% / 40% is how Diego's time on the floor
+    is split. 90% is how ready the MY27 Cummins DOC and DPF program is
+    (the supervisor's figure), with launch planned for January 2027.
   - Level L in October, U and O in November and December.
   - The exam in week 40.
 
@@ -74,7 +76,7 @@ The template is only read for its road background, to cut the glass panels.
 | 5 | Level I exam next, in week 40 | Gantt of skills, done and next |
 | 6 | Level I | Five topics mastered, four still open |
 | 7 | Eleven skills achieved | Progress on the 23 skills, one dot per skill |
-| 8 | Industrialization | MY27 Cummins DOC and DPF program, 90% of the time |
+| 8 | Industrialization | 60% of the time on it; the program is 90% ready, launch in January |
 | 9 | Improvement idea and implementation | 4M: problem, idea and what is running today |
 | 10 | Results | Cycle time 174 s to 93 s, load, weld and unload per part |
 | 11 | Training process update | A proposal: reviewed, found, rebuilt |

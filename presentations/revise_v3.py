@@ -444,19 +444,34 @@ notes(s,
       "U and O are mostly ahead; 4M is my first step in O.")
 
 # ============================================================ 8 · industrialization
-# The supervisor raised the share to 90 % and named the program; the 40 %
-# and the 60 % bar were left behind, so they follow his number now.
+# Two different numbers, both kept. Diego's 60 / 40 is how his time on the
+# floor is split. The supervisor's 90 % is how ready the MY27 Cummins DOC and
+# DPF program is: close to launch, planned for January 2027.
 s = S[7]
-retext(s, "TextBox 4", "90%")
-retext(s, "TextBox 5", "DOC and DPF program, MY27 Cummins")
-shape(s, "Rectangle 7").width = int(shape(s, "Rectangle 6").width * 0.9)
-retext(s, "TextBox 8", "10%")
+set_title(s, "Most of my time goes to a program that is 90% ready",
+          "My time on the floor, and where the program stands")
+retext(s, "TextBox 4", "60%")
+retext(s, "TextBox 5", "of my time: industrialization, with Engineering")
+shape(s, "Rectangle 7").width = int(shape(s, "Rectangle 6").width * 0.6)
+retext(s, "TextBox 8", "40%")
 retext(s, "TextBox 12", "Industrialization and successful PPAP runs of the "
-       "MY27 Cummins program, together with Engineering.")
+       "MY27 Cummins DOC and DPF program, together with Engineering.")
+shape(s, "TextBox 12").height = Inches(0.9)
+retext(s, "TextBox 14", "PROGRAM PROGRESS")
+lbl = shape(s, "TextBox 15")                 # the definition makes way
+lbl._element.getparent().remove(lbl._element)
+text(s, 6.20, 4.28, 1.9, 0.8, "90%", 40, LIME, bold=True)
+tb, tf = txbox(s, 8.05, 4.36, 4.60, 0.7)
+para(tf, "ready to launch", 14, WHITE, bold=True, first=True)
+para(tf, "Start of production planned for January 2027.", 12, GRAY,
+     space_before=2)
+rect(s, 6.20, 5.30, 6.45, 0.16, fill=GRAY, opacity=30)
+rect(s, 6.20, 5.30, 6.45 * 0.9, 0.16, fill=LIME)
 notes(s,
-      "90% of my time: the MY27 Cummins DOC and DPF program.",
-      "Industrialization means getting a new process ready for the floor.",
-      "The other 10% at the cells is where most hands-on learning happens.")
+      "Two numbers, not to be mixed up.",
+      "60% of my time goes to industrialization, 40% to support at the cells.",
+      "The program itself is 90% ready, with launch planned for January.",
+      "The cells are where most of the hands-on learning happens.")
 
 # ============================================================ 9 · 4M idea
 s = S[8]
