@@ -181,6 +181,36 @@ La fuente de 12 V puede ser de **2 A**: el TB6612 limita a 1.2 A por canal.
 todo el brazo (hasta 350 mm); en J2 solo por el antebrazo (150 mm). Si
 necesitas cambiarlo de eje, edita `ENC_MODE` en `config.h`.
 
+### 4.2.1 Ubicación física en la NodeMCU-32S (USB hacia arriba, vista superior)
+
+Contando los pines de arriba (USB) hacia abajo:
+
+| Lado izquierdo | Uso | | Lado derecho | Uso |
+|---|---|---|---|---|
+| 1 · 5V | **nada** | | 1 · GPIO6 | nada (flash) |
+| 2 · GPIO11 | nada (flash) | | 2 · GPIO7 | nada (flash) |
+| 3 · GPIO10 | nada (flash) | | 3 · GPIO8 | nada (flash) |
+| 4 · GPIO9 | nada (flash) | | 4 · GPIO15 | libre |
+| 5 · GPIO13 | libre | | 5 · GPIO2 | libre (LED de la placa) |
+| 6 · **GND** | riel GND | | 6 · GPIO0 | nada (botón BOOT) |
+| 7 · GPIO12 | nada (pin de arranque) | | 7 · **GPIO4** | TB6612 **STBY** |
+| 8 · **GPIO14** | TB6612 **PWMB** | | 8 · **GPIO16** | Encoder J1 **amarillo (A)** |
+| 9 · **GPIO27** | TB6612 **AIN2** | | 9 · **GPIO17** | Encoder J1 **verde (B)** |
+| 10 · **GPIO26** | TB6612 **AIN1** | | 10 · GPIO5 | libre |
+| 11 · **GPIO25** | TB6612 **PWMA** | | 11 · **GPIO18** | Encoder J2 **amarillo (A)** |
+| 12 · **GPIO33** | TB6612 **BIN2** | | 12 · GPIO19 | libre (reservado, fase B de J2) |
+| 13 · **GPIO32** | TB6612 **BIN1** | | 13 · **GND** | riel GND |
+| 14 · GPIO35 | libre (solo entrada) | | 14 · GPIO21 | libre |
+| 15 · GPIO34 | libre (solo entrada) | | 15 · GPIO3 (RX) | nada (USB) |
+| 16 · GPIO39 | libre (solo entrada) | | 16 · GPIO1 (TX) | nada (USB) |
+| 17 · GPIO36 | libre (solo entrada) | | 17 · GPIO22 | libre |
+| 18 · EN | nada | | 18 · GPIO23 | libre |
+| 19 · **3V3** | riel 3V3 | | 19 · **GND** | riel GND |
+
+La placa tiene **un solo pin 3V3**, que deben compartir la lógica del TB6612 y
+los dos encoders. Usa un riel de protoboard: el 3V3 va al riel "+" y un GND al
+riel "−". **Nunca** pongas los 12 V en ese mismo riel.
+
 ### 4.3 Diagrama
 
 ```
