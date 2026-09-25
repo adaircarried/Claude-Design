@@ -188,7 +188,10 @@ static float get_accel() {
 // Movimiento articular coordinado (MOVJ y JOG)
 static void start_joint(const float target[NUM_AXES], float vmax, float amax) {
     if (!kin_joints_valid(target[0], target[1])) {
-        reject("objetivo fuera de los limites articulares");
+        con_printf("[MOTION] objetivo q1=%.1f q2=%.1f; limites q1 [%.0f, %.0f], q2 [%.0f, %.0f]\n",
+                   target[0], target[1], JOINT_MIN_DEG[0], JOINT_MAX_DEG[0],
+                   JOINT_MIN_DEG[1], JOINT_MAX_DEG[1]);
+        reject("objetivo fuera de los limites articulares (¿falta HOME? revise STATUS)");
         return;
     }
     read_ref(s_q0);
