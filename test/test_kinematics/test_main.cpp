@@ -101,8 +101,40 @@ static void test_ik_dos_ramas_mismo_punto(void)
     TEST_ASSERT_FLOAT_WITHIN(0.1f, pu.x, pd.x);
     TEST_ASSERT_FLOAT_WITHIN(0.1f, pu.y, pd.y);
 
-    TEST_ASSERT_TRUE(up.q2 > 0.0f);     /* rama positiva */
-    TEST_ASSERT_TRUE(down.q2 < 0.0f);   /* rama negativa */
+    TEST_ASSERT_TRUE(up.q2 < 0.0f);     /* codo arriba = rama negativa */
+    TEST_ASSERT_TRUE(down.q2 > 0.0f);   /* codo abajo  = rama positiva */
+}
+
+/* --- EL CODO "ARRIBA" TIENE QUE QUEDAR FISICAMENTE ARRIBA ----------------
+ * Este test existe porque una version anterior tenia las etiquetas
+ * invertidas y ninguno de los tests lo detecto: la ida y vuelta FK -> IK -> FK
+ * sale perfecta con cualquier etiqueta, porque solo comprueba que la
+ * matematica es coherente consigo misma, no que el nombre corresponda a la
+ * realidad.
+ *
+ * Aqui se calcula donde queda el codo, (l1*cos q1, l1*sin q1), y se compara
+ * con la altura de la recta hombro-efector en esa misma X. En un brazo que
+ * trabaja en plano vertical sobre una mesa, confundir las dos ramas puede
+ * llevar el codo contra la mesa. */
+static float altura_codo_sobre_recta(float x, float y, ElbowConfig_t e)
+{
+    Joints_t j;
+    TEST_ASSERT_EQUAL(IK_OK, kin_inverse(x, y, e, &j));
+    const float q1 = j.q1 * 3.14159265f / 180.0f;
+    const float ex = LINK_L1_MM * cosf(q1);
+    const float ey = LINK_L1_MM * sinf(q1);
+    return ey - (y / x) * ex;          /* > 0: codo por encima de la recta */
+}
+
+static void test_codo_arriba_queda_fisicamente_arriba(void)
+{
+    const float objetivos[][2] = { {250.0f, 100.0f}, {200.0f, -50.0f},
+                                   {180.0f, 150.0f}, {300.0f,   0.0f} };
+    for (unsigned i = 0; i < sizeof(objetivos) / sizeof(objetivos[0]); ++i) {
+        const float x = objetivos[i][0], y = objetivos[i][1];
+        TEST_ASSERT_TRUE(altura_codo_sobre_recta(x, y, ELBOW_UP)   > 1.0f);
+        TEST_ASSERT_TRUE(altura_codo_sobre_recta(x, y, ELBOW_DOWN) < -1.0f);
+    }
 }
 
 /* --- Validacion del espacio de trabajo ---------------------------------- */
@@ -137,16 +169,17 @@ static void test_por_debajo_de_la_mesa(void)
  * camino, solo en los extremos.) */
 static void test_recta_valida_en_extremos_falla_en_medio(void)
 {
+    /* Puntos hallados por busqueda exhaustiva en la rama q2 > 0 (codo abajo). */
     Point_t a = {  80.0f, 130.0f };
     Point_t b = { 140.0f,  45.0f };
 
     /* Los dos extremos, por separado, son perfectamente alcanzables */
-    TEST_ASSERT_EQUAL(IK_OK, kin_inverse(a.x, a.y, ELBOW_UP, NULL));
-    TEST_ASSERT_EQUAL(IK_OK, kin_inverse(b.x, b.y, ELBOW_UP, NULL));
+    TEST_ASSERT_EQUAL(IK_OK, kin_inverse(a.x, a.y, ELBOW_DOWN, NULL));
+    TEST_ASSERT_EQUAL(IK_OK, kin_inverse(b.x, b.y, ELBOW_DOWN, NULL));
 
     /* ...y sin embargo la recta entre ellos no lo es */
     Point_t fallo;
-    IkResult_t r = kin_validate_line(a, b, ELBOW_UP, 40, &fallo);
+    IkResult_t r = kin_validate_line(a, b, ELBOW_DOWN, 40, &fallo);
     TEST_ASSERT_TRUE(r != IK_OK);
 
     /* el punto que falla esta por dentro del alcance efectivo */
@@ -226,6 +259,7 @@ int main(int, char **)
     RUN_TEST(test_ik_roundtrip_codo_abajo);
     RUN_TEST(test_ik_roundtrip_codo_arriba);
     RUN_TEST(test_ik_dos_ramas_mismo_punto);
+    RUN_TEST(test_codo_arriba_queda_fisicamente_arriba);
     RUN_TEST(test_fuera_de_alcance);
     RUN_TEST(test_demasiado_cerca);
     RUN_TEST(test_por_debajo_de_la_mesa);

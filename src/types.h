@@ -95,6 +95,9 @@ typedef enum {
  * trayectoria MOVL: cambiar de rama a mitad de camino hace que el codo se
  * voltee violentamente aunque el efector siga sobre la recta. */
 typedef enum {
-    ELBOW_DOWN = 0,   /* q2 negativo */
-    ELBOW_UP   = 1    /* q2 positivo */
+    ELBOW_DOWN = 0,   /* q2 > 0: el codo queda por debajo de la recta
+                         hombro-efector                                    */
+    ELBOW_UP   = 1    /* q2 < 0: el codo queda por encima. Es el valor por
+                         defecto: en un brazo vertical con la mesa debajo,
+                         mantiene el codo lejos de la mesa.                 */
 } ElbowConfig_t;

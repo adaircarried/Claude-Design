@@ -15,13 +15,17 @@ void persist_init(void)
 void persist_save_config(uint16_t speed_pct, ElbowConfig_t elbow)
 {
     prefs.putUShort("speed", speed_pct);
-    prefs.putUChar("elbow", (uint8_t)elbow);
+    prefs.putUChar("elbow2", (uint8_t)elbow);
 }
 
 void persist_load_config(uint16_t *speed_pct, ElbowConfig_t *elbow)
 {
     if (speed_pct) *speed_pct = prefs.getUShort("speed", 50);
-    if (elbow)     *elbow     = (ElbowConfig_t)prefs.getUChar("elbow", (uint8_t)ELBOW_DOWN);
+    /* Clave "elbow2" y no "elbow": la version anterior tenia las etiquetas
+     * del codo invertidas, asi que un valor guardado con ella significaria
+     * hoy lo contrario. Cambiar la clave descarta ese valor viejo y se
+     * arranca con el valor por defecto correcto. */
+    if (elbow)     *elbow     = (ElbowConfig_t)prefs.getUChar("elbow2", (uint8_t)ELBOW_UP);
 }
 
 void persist_save_home(int32_t s1, int32_t s2)

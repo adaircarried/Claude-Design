@@ -5,13 +5,30 @@ universitario de Control de Robots, con tres parciales evaluados.
 
 ## Estado
 
-- **Parcial 1** — implementado. JOG, MOVJ, MOVL, homing, consola serial,
-  telemetría, supervisor con límites por software.
-- **Parcial 2** (30 oct 2026) — protocolo serial binario con CRC. Reescribe
-  `comms.cpp` y nada más. El buffer circular ya está en `comms.cpp`.
-- **Parcial 3** (30 nov 2026) — visión, pinza SG90, lógica de juego. Reutiliza
-  `kinematics.cpp` sin cambios. La API de poses en NVS ya está en
-  `persistence.h`; `MOTION_GRIPPER` ya está en el enum.
+- **Parcial 1** — **entregado y calificado con 10, pero con OTRO firmware.**
+  Los NEMA 17 no llegaron a tiempo; se entrego con motorreductores DC
+  prestados (GM25-370 ~1:45, encoder Hall, driver TB6612FNG, ESP-32S NodeMCU),
+  PID a 200 Hz. Ese firmware vive en la rama `claude/funny-lovelace-jp432u`,
+  carpeta `firmware_dc/`, y NO comparte codigo con este. Misma arquitectura
+  conceptual: mismo `Setpoint_t`, misma cola, mismas 4 tareas y nucleos.
+- **Este firmware (steppers + TB6600)** — es la linea principal desde octubre
+  2026. Compila y arranca en hardware real; consola y finales de carrera
+  probados en banco. **Todavia no ha movido un motor.**
+- **Parcial 2** (ultima semana de oct 2026) — protocolo serial binario con
+  CRC. Reescribe `comms.cpp`. El buffer circular ya esta en `comms.cpp`.
+  Al pasar a binario: `CONSOLE_ECHO` a 0 en `config.h` (el eco corromperia
+  las tramas); el eco del monitor se puede dar con `monitor_echo = yes`.
+- **Parcial 3** (30 nov 2026) — vision, pinza SG90, logica de juego. Reutiliza
+  `kinematics.cpp`. La API de poses en NVS ya esta en `persistence.h`;
+  `MOTION_GRIPPER` ya esta en el enum.
+
+## Convencion del codo (corregida en oct 2026)
+
+`ELBOW_UP` = q2 < 0 = el codo queda fisicamente por encima de la recta
+hombro-efector. Es el valor por defecto. Una version anterior tenia las
+etiquetas invertidas; la clave NVS paso de `elbow` a `elbow2` para descartar
+valores guardados con la convencion vieja. `MOVL` exige que el brazo ya este
+en la rama configurada (si no, `ERR MOVL_RAMA`: hacer un `MOVJ` antes).
 
 ## Reglas que no se rompen
 

@@ -71,8 +71,15 @@ IkResult_t kin_inverse(float x, float y, ElbowConfig_t elbow, Joints_t *out)
     if (cos_q2 >  1.0f) cos_q2 =  1.0f;      /* ver nota (a) */
     if (cos_q2 < -1.0f) cos_q2 = -1.0f;
 
-    float q2 = acosf(cos_q2);                 /* rama positiva = ELBOW_UP */
-    if (elbow == ELBOW_DOWN) q2 = -q2;
+    /* acosf() devuelve la rama q2 >= 0. Con q1 medido en sentido antihorario
+     * desde +X y el eje Y hacia arriba (plano vertical), q2 > 0 dobla el
+     * antebrazo en sentido antihorario, y eso deja el codo POR DEBAJO de la
+     * recta hombro-efector: es la rama de codo ABAJO. Codo ARRIBA es q2 < 0.
+     * Comprobado calculando la posicion fisica del codo, no solo la ida y
+     * vuelta FK/IK (que sale bien con cualquier etiqueta): ver el test
+     * test_codo_arriba_queda_fisicamente_arriba. */
+    float q2 = acosf(cos_q2);
+    if (elbow == ELBOW_UP) q2 = -q2;
 
     const float q1 = atan2f(y, x) - atan2f(l2 * sinf(q2), l1 + l2 * cosf(q2));
 

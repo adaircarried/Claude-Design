@@ -25,7 +25,7 @@ static FastAccelStepper *g_a2 = NULL;
 QueueHandle_t setpointQueue = NULL;
 
 static uint16_t      g_speed_pct = 50;
-static ElbowConfig_t g_elbow     = ELBOW_DOWN;
+static ElbowConfig_t g_elbow     = ELBOW_UP;
 
 /* --- Maquina de estados de ejecucion ------------------------------------ */
 typedef enum {
@@ -215,6 +215,25 @@ static bool start_movl(float x, float y, uint16_t pct)
 {
     float q1, q2;
     motion_get_joints(&q1, &q2);
+
+    /* LA RAMA DEL CODO DE LA POSICION ACTUAL DEBE SER LA CONFIGURADA.
+     * El interpolador resuelve cada punto de la recta en la rama de g_elbow.
+     * Si el brazo esta ahora mismo en la otra rama, el primer refresco
+     * pediria saltar de una a otra de golpe: el codo se voltea a toda
+     * velocidad aunque el efector, sobre el papel, siga en la recta. En un
+     * brazo vertical eso puede llevar el codo contra la mesa. Se rechaza y
+     * se pide un MOVJ previo, que si puede cruzar de rama de forma controlada.
+     * (Cerca de q2 = 0 las dos ramas coinciden, pero esa zona es el brazo
+     * estirado y ya la excluye WS_R_MAX_MM al validar la recta.) */
+    const bool codo_arriba_ahora = (q2 < 0.0f);
+    if (codo_arriba_ahora != (g_elbow == ELBOW_UP)) {
+        report_printf("ERR MOVL_RAMA el codo esta %s (q2=%.1f) pero ELBOW es %s. "
+                      "Haz un MOVJ a una pose con codo %s, o cambia ELBOW\n",
+                      codo_arriba_ahora ? "ARRIBA" : "ABAJO", q2,
+                      g_elbow == ELBOW_UP ? "UP" : "DOWN",
+                      g_elbow == ELBOW_UP ? "arriba (q2<0)" : "abajo (q2>0)");
+        return false;
+    }
 
     g_line_a = kin_forward(q1, q2);
     g_line_b.x = x;
