@@ -22,6 +22,29 @@ universitario de Control de Robots, con tres parciales evaluados.
   `kinematics.cpp`. La API de poses en NVS ya esta en `persistence.h`;
   `MOTION_GRIPPER` ya esta en el enum.
 
+## Plan del Parcial 2 (acordado el 4 oct 2026)
+
+- Linea principal: este firmware, con steppers. Los motores DC hay que
+  devolverlos, asi que **no hay plan B con el firmware DC**.
+- Plan B real: si la mecanica no esta lista, la demo de la U2 se hace con los
+  steppers sueltos en una base con discos indicadores de angulo. La U2 evalua
+  el protocolo y que los paquetes validos produzcan movimiento fisico; no
+  exige el brazo montado.
+- Ruta critica: rehacer las bases mecanicas (el brazo de la U1 era para
+  motores de 25 mm; el NEMA 17 con reductor mide 42 mm de lado). La puesta a
+  punto electrica en banco va en paralelo, sin esperar a la mecanica.
+- Programa de PC: Python + pyserial. Se reutilizara en la U3 (vision con
+  OpenCV en Python).
+- Material disponible: 2 TB6600, fuente de 24 V, finales de carrera,
+  capacitores de 100 uF. Falta: bases mecanicas para los NEMA 17.
+
+| Semana | Banco (usuario) | Codigo | Meta |
+|---|---|---|---|
+| 1: 5-11 oct | puesta en marcha electrica + bases mecanicas | especificacion del protocolo | MOVJ real |
+| 2: 12-18 oct | calibracion: limites, sentidos, TEST | parser binario, CRC, errores, tests nativos | firmware U2 en verde |
+| 3: 19-25 oct | integracion | programa de PC en Python | demo completa |
+| 4: 26-30 oct | ensayo | documentacion, guion | codigo congelado el 26 |
+
 ## Convencion del codo (corregida en oct 2026)
 
 `ELBOW_UP` = q2 < 0 = el codo queda fisicamente por encima de la recta
