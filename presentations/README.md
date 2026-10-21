@@ -52,6 +52,35 @@ Also in V3:
   - Level L in October, U and O in November and December.
   - The exam in week 40.
 
+## Follow-up 2 (October 26, 2026)
+
+- `Tenneco_FollowUp2_RoboticWelding_Diego_de_Leon.pptx` follows the shared
+  13-slide structure in `estandar/estandar-becarios.html`. The `.pdf` is a
+  preview.
+- `followup2.py` builds it from V3:
+
+  ```bash
+  python3 followup2.py Tenneco_Robotics_Setter_Diego_de_Leon_V3.pptx /path/to/template.pptx
+  ```
+
+**What carries over from V3.** Slides 1 to 4 and the closing slide. The
+title slide now reads "Follow-up 2 | October 26, 2026".
+
+**What is new.** Slides 5 to 12:
+
+| Slide | Content |
+|---|---|
+| 5 | Commitments from September 25 and their state: 1 done, 2 late, 2 on track |
+| 6 | Gantt with today's line at week 44, the exam marked as moved, and PPAP in week 1 |
+| 7 | Skills: 15 achieved, 6 in progress, 2 not started |
+| 8 | What was learned in October's firefight |
+| 9 | Industrialization: the metrology recovery and the start of SCR |
+| 10 | Results: DOC and DPF at 95%, the PV counts, and 4M still at 93 s |
+| 11 | Next steps |
+| 12 | Conclusions |
+
+**Short version.** For the 7.5-minute practice, hide slides 4 and 9.
+
 ## Rebuilding
 
 The corporate template is marked TENNECO CONFIDENTIAL, so it is deliberately
