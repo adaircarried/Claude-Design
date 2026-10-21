@@ -1,0 +1,353 @@
+<title>Estándar de presentación de becarios</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a plant work instruction. One column of reading width, a facts strip,
+   a timing bar drawn to scale, then the 13 slides as numbered steps. */
+:root {
+  --bg: #f6f7f8;
+  --surface: #ffffff;
+  --ink: #0b1f2e;
+  --muted: #5d6b75;
+  --line: #d9dee2;
+  --navy: #051c2c;
+  --accent: #0033a0;
+  --accent2: #00267a;
+  --lime: #d5fb00;
+  --real: #00b050;
+  --plan: #9dc3e6;
+  --skip: #e3e7eb;
+  --display: "Barlow Semi Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", Arial, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #071823; --surface: #0d2333; --ink: #e8eef2; --muted: #9fb0bc;
+    --line: #23394a; --navy: #e8eef2; --accent: #8fb2ff; --accent2: #6f95e8; --skip: #1f3445;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #071823; --surface: #0d2333; --ink: #e8eef2; --muted: #9fb0bc;
+  --line: #23394a; --navy: #e8eef2; --accent: #8fb2ff; --accent2: #6f95e8; --skip: #1f3445;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); color: var(--navy); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.05; }
+h2 { font-size: 26px; margin-top: 48px; margin-bottom: 12px; }
+h3 { font-size: 20px; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.lede { margin-top: 14px; color: var(--muted); font-size: 18px; }
+.rule { height: 4px; width: 72px; background: var(--lime); margin: 18px 0 0; border-radius: 2px; }
+
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 28px; }
+.facts div { background: var(--surface); padding: 14px 16px; min-width: 0; }
+.facts b { display: block; font-family: var(--display); font-size: 24px; color: var(--navy); line-height: 1.1; }
+.facts span { font-size: 13px; color: var(--muted); }
+
+.tracks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 12px; font-size: 14px; }
+
+/* timing bars, drawn to scale: 1 s = 1 / 900 of the full width */
+.timing { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 18px; }
+.trow { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: center; }
+.trow .lab { font-weight: 700; font-size: 14px; }
+.trow .lab small { display: block; font-weight: 400; color: var(--muted); }
+.bar { display: flex; height: 30px; border-radius: 4px; overflow: hidden; background: var(--skip); }
+.seg { display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px;
+  color: #fff; background: var(--accent); border-right: 1px solid var(--surface); min-width: 0; overflow: hidden; }
+.seg.alt { background: var(--accent2); }
+:root[data-theme="dark"] .seg, :root[data-theme="dark"] .seg.alt { color: #051c2c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg { color: #051c2c; } }
+.seg.margin { background: transparent; color: var(--muted); }
+.tnote { font-size: 13px; color: var(--muted); }
+
+/* the 13 slides */
+ol.slides { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.slide { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px;
+  display: grid; grid-template-columns: 46px 1fr; gap: 14px; }
+.num { font-family: var(--display); font-size: 30px; color: var(--accent); line-height: 1; }
+.head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+.head .tpl { font-size: 13px; color: var(--muted); }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.tag { font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.on { border-color: var(--accent); color: var(--accent); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 22px; margin-top: 10px; }
+.grid2 > div { min-width: 0; }
+.k { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.grid2 p, .grid2 li { font-size: 15px; }
+.grid2 ul { margin: 2px 0 0; padding-left: 18px; }
+.ex { margin-top: 10px; font-size: 14px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+.ex em { color: var(--ink); font-style: normal; font-weight: 600; }
+
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; min-width: 0; }
+.card h3 { margin-bottom: 8px; }
+.card ul { margin: 0; padding-left: 18px; font-size: 15px; }
+.card li + li { margin-top: 4px; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; }
+.dia { display: inline-block; width: 10px; height: 10px; background: var(--navy); transform: rotate(45deg); margin: 0 7px 0 2px; }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 15px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+
+.check { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.check li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; font-size: 15px; }
+.check li::before { content: ""; width: 14px; height: 14px; border: 2px solid var(--accent); border-radius: 3px; margin-top: 3px; }
+footer { margin-top: 48px; font-size: 13px; color: var(--muted); }
+
+@media (max-width: 640px) {
+  .slide { grid-template-columns: 1fr; }
+  .grid2 { grid-template-columns: 1fr; }
+  .tags { margin-left: 0; }
+  .trow { grid-template-columns: 1fr; gap: 6px; }
+}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Departamento de Ingeniería · Programa de becarios</div>
+  <h1>Estándar de presentación de becarios</h1>
+  <p class="lede">Una sola estructura para que los cinco becarios presenten lo mismo, en el mismo orden y con los mismos formatos. Cada quien cambia el contenido de su proceso; el esqueleto no se mueve.</p>
+  <div class="rule"></div>
+
+  <div class="facts">
+    <div><b>13</b><span>diapositivas, siempre en este orden</span></div>
+    <div><b>15 min</b><span>presentación estándar</span></div>
+    <div><b>7.5 min</b><span>práctica con el gerente</span></div>
+    <div><b>Inglés</b><span>para todos, diapositivas y exposición</span></div>
+    <div><b>26 oct 2026</b><span>próxima presentación</span></div>
+  </div>
+
+  <div class="tracks" aria-label="Procesos">
+    <span class="chip">Soldadura robotizada · 2 becarios</span>
+    <span class="chip">Fuji y Canning · 1 becario</span>
+    <span class="chip">Doblado de tubo · 1 becario</span>
+    <span class="chip">Layouts y números de parte · 1 becario</span>
+  </div>
+
+  <h2>Cómo se reparte el tiempo</h2>
+  <div class="timing">
+    <div class="trow">
+      <div class="lab">15 min<small>13 diapositivas</small></div>
+      <div class="bar" role="img" aria-label="Segundos por diapositiva en la versión de 15 minutos">
+        <div class="seg" style="width:2.2%">1</div>
+        <div class="seg alt" style="width:4.4%">2</div>
+        <div class="seg" style="width:6.7%">3</div>
+        <div class="seg alt" style="width:7.8%">4</div>
+        <div class="seg" style="width:8.9%">5</div>
+        <div class="seg alt" style="width:8.9%">6</div>
+        <div class="seg" style="width:6.7%">7</div>
+        <div class="seg alt" style="width:11.1%">8</div>
+        <div class="seg" style="width:10%">9</div>
+        <div class="seg alt" style="width:8.9%">10</div>
+        <div class="seg" style="width:6.7%">11</div>
+        <div class="seg alt" style="width:4.4%">12</div>
+        <div class="seg" style="width:1.1%"></div>
+        <div class="seg margin" style="width:12.2%">margen</div>
+      </div>
+    </div>
+    <div class="trow">
+      <div class="lab">7.5 min<small>11 diapositivas</small></div>
+      <div class="bar" role="img" aria-label="Segundos por diapositiva en la versión de práctica">
+        <div class="seg" style="width:1.1%"></div>
+        <div class="seg alt" style="width:2.2%">2</div>
+        <div class="seg" style="width:3.3%">3</div>
+        <div class="seg alt" style="width:5.6%">5</div>
+        <div class="seg" style="width:6.7%">6</div>
+        <div class="seg alt" style="width:4.4%">7</div>
+        <div class="seg" style="width:5.6%">8</div>
+        <div class="seg alt" style="width:6.7%">10</div>
+        <div class="seg" style="width:4.4%">11</div>
+        <div class="seg alt" style="width:3.3%">12</div>
+        <div class="seg" style="width:0.6%"></div>
+        <div class="seg margin" style="width:6.1%">margen</div>
+        <div style="width:50%"></div>
+      </div>
+    </div>
+    <p class="tnote">Las dos barras están a la misma escala: el ancho completo son 15 minutos. Los números son las diapositivas. En la versión de práctica las diapositivas 4 y 9 no se borran, se ocultan (clic derecho, Ocultar diapositiva), para que el archivo siga siendo el mismo.</p>
+  </div>
+
+  <h2>Las 13 diapositivas</h2>
+  <p style="margin-bottom:16px;color:var(--muted)">El orden sigue al template corporativo: portada, valor, proyecto, Gantt, resultados y conclusión. Como es una presentación de seguimiento, la diapositiva 5 cuenta qué cambió desde la revisión anterior.</p>
+
+  <ol class="slides">
+    <li class="slide"><div class="num">1</div><div>
+      <div class="head"><h3>Title</h3><span class="tpl">Portada del template</span>
+        <div class="tags"><span class="tag on">20 s</span><span class="tag on">práctica 10 s</span></div></div>
+      <div class="grid2">
+        <div><div class="k">Responde</div><p>Quién presenta y de qué programa.</p></div>
+        <div><div class="k">Debe incluir</div><ul><li>Nombre del programa y del proceso</li><li>Nombre, universidad, carrera y cuatrimestre</li><li>Tutor de planta y departamento</li><li>Periodo del programa y "Follow-up 2" con la fecha</li></ul></div>
+      </div></div></li>
+
+    <li class="slide"><div class="num">2</div><div>
+      <div class="head"><h3>Tenneco value</h3><span class="tpl">Valores</span>
+        <div class="tags"><span class="tag on">40 s</span><span class="tag on">práctica 20 s</span></div></div>
+      <div class="grid2">
+        <div><div class="k">Responde</div><p>Con qué valor me identifico y por qué.</p></div>
+        <div><div class="k">Debe incluir</div><ul><li>Un solo valor, con su definición oficial</li><li>Una frase propia con un ejemplo real del piso</li></ul></div>
+      </div></div></li>
+
+    <li class="slide"><div class="num">3</div><div>
+      <div class="head"><h3>Objective and scope</h3><span class="tpl">Proyecto enfocado a conocimientos y habilidades</span>
+        <div class="tags"><span class="tag on">60 s</span><span class="tag on">práctica 30 s</span></div></div>
+      <div class="grid2">
+        <div><div class="k">Responde</div><p>Qué tengo que lograr al final del programa.</p></div>
+        <div><div class="k">Debe incluir</div><ul><li>El objetivo oficial del puesto, tal como viene en la hoja</li><li>Por qué importa para la planta, en una frase</li><li>La definición del proyecto final y cuál es el mío</li></ul></div>
+      </div></div></li>
+
+    <li class="slide"><div class="num">4</div><div>
+      <div class="head"><h3>The plan</h3><span class="tpl">Matriz ILUO</span>
+        <div class="tags"><span class="tag on">70 s</span><span class="tag">oculta en práctica</span></div></div>
+      <div class="grid2">
+        <div><div class="k">Responde</div><p>Cómo está planeado llegar al objetivo.</p></div>
+        <div><div class="k">Debe incluir</div><ul><li>La matriz ILUO propia, parafraseada</li><li>Una fila por nivel: qué cubre, cómo se valida, horas y método</li><li>El total de horas de entrenamiento formal</li></ul></div>
+      </div></div></li>
+
+    <li class="slide"><div class="num">5</div><div>
+      <div class="head"><h3>Since the last review</h3><span class="tpl">Nueva, por ser seguimiento</span>
+        <div class="tags"><span class="tag on">80 s</span><span class="tag on">práctica 50 s</span></div></div>
+      <div class="grid2">
+        <div><div class="k">Responde</div><p>Qué prometí la vez pasada y qué pasó con cada cosa.</p></div>
+        <div><div class="k">Debe incluir</div><ul><li>Los compromisos de la presentación anterior, uno por fila</li><li>Estado de cada uno: Done, On track, At risk o Late</li><li>Si algo se movió, la nueva fecha y el motivo en pocas palabras</li></ul></div>
+      </div>
+      <p class="ex">Ejemplo: <em>"Level I exam, planned for week 40: Late, new date week 45."</em> Decir lo que no se cumplió da más confianza que esconderlo.</p></div></li>
+
+    <li class="slide"><div class="num">6</div><div>
+      <div class="head"><h3>Gantt</h3><span class="tpl">Gantt del template</span>
+        <div class="tags"><span class="tag on">80 s</span><span class="tag on">práctica 60 s</span></div></div>
+      <div class="grid2">
+        <div><div class="k">Responde</div><p>Qué habilidades se han trabajado, cuándo, y qué sigue.</p></div>
+        <div><div class="k">Debe incluir</div><ul><li>Semanas del programa en el eje, con mes y número de semana</li><li>Una fila por nivel o bloque de habilidades, más el proyecto</li><li>Barra real y barra de plan, línea de hoy e hitos (exámenes, validaciones)</li></ul></div>
+      </div></div></li>
+
+    <li class="slide"><div class="num">7</div><div>
+      <div class="head"><h3>ILUO status</h3><span class="tpl">Avance en la matriz</span>
+        <div class="tags"><span class="tag on">60 s</span><span class="tag on">práctica 40 s</span></div></div>
+      <div class="grid2">
+        <div><div class="k">Responde</div><p>Cuántas habilidades tengo y cuántas faltan.</p></div>
+        <div><div class="k">Debe incluir</div><ul><li>Un punto por habilidad de la matriz, agrupado por nivel</li><li>Tres estados: Achieved, In progress, Not started</li><li>Los totales en el título, por ejemplo "11 of 23 skills achieved"</li></ul></div>
+      </div></div></li>
+
+    <li class="slide"><div class="num">8</div><div>
+      <div class="head"><h3>What I learned</h3><span class="tpl">Proyecto enfocado a conocimientos y habilidades</span>
+        <div class="tags"><span class="tag on">100 s</span><span class="tag on">práctica 50 s</span></div></div>
+      <div class="grid2">
+        <div><div class="k">Responde</div><p>Qué sé hacer hoy que no sabía en la revisión anterior.</p></div>
+        <div><div class="k">Debe incluir</div><ul><li>Lo nuevo desde la revisión anterior, en palabras simples</li><li>Lo que ya domino y lo que sigue abierto, en dos columnas</li><li>Cómo lo aprendí: manual, piso, curso o tutor</li></ul></div>
+      </div></div></li>
+
+    <li class="slide"><div class="num">9</div><div>
+      <div class="head"><h3>Project or improvement</h3><span class="tpl">Proyecto</span>
+        <div class="tags"><span class="tag on">90 s</span><span class="tag">oculta en práctica</span></div></div>
+      <div class="grid2">
+        <div><div class="k">Responde</div><p>Qué problema atacamos y qué hicimos.</p></div>
+        <div><div class="k">Debe incluir</div><ul><li>Problem, Idea, Implementation, en ese orden</li><li>Estado del proyecto: idea, en prueba o implementado</li><li>Una o dos fotos, en los espacios marcados</li></ul></div>
+      </div></div></li>
+
+    <li class="slide"><div class="num">10</div><div>
+      <div class="head"><h3>Results</h3><span class="tpl">Resultados hasta el momento</span>
+        <div class="tags"><span class="tag on">80 s</span><span class="tag on">práctica 60 s</span></div></div>
+      <div class="grid2">
+        <div><div class="k">Responde</div><p>Cuánto cambió, medido.</p></div>
+        <div><div class="k">Debe incluir</div><ul><li>Antes y después con el mismo indicador y la misma unidad</li><li>Dos o tres indicadores grandes, cada uno con su unidad</li><li>De dónde sale el dato</li></ul></div>
+      </div>
+      <p class="ex">En la práctica de 7.5 min, la diapositiva 9 se oculta y el problema se cuenta en una frase al abrir esta.</p></div></li>
+
+    <li class="slide"><div class="num">11</div><div>
+      <div class="head"><h3>Next steps</h3><span class="tpl">Siguientes pasos</span>
+        <div class="tags"><span class="tag on">60 s</span><span class="tag on">práctica 40 s</span></div></div>
+      <div class="grid2">
+        <div><div class="k">Responde</div><p>Qué sigue, cuándo, y qué necesito para lograrlo.</p></div>
+        <div><div class="k">Debe incluir</div><ul><li>Siguientes niveles o entregables, cada uno con fecha o semana</li><li>"What I need": dos o tres peticiones concretas a la gerencia</li></ul></div>
+      </div>
+      <p class="ex">Lo que se escriba aquí se convierte en la tabla de la diapositiva 5 de la siguiente revisión.</p></div></li>
+
+    <li class="slide"><div class="num">12</div><div>
+      <div class="head"><h3>Conclusions</h3><span class="tpl">Conclusión</span>
+        <div class="tags"><span class="tag on">40 s</span><span class="tag on">práctica 30 s</span></div></div>
+      <div class="grid2">
+        <div><div class="k">Responde</div><p>Qué ya está y qué sigue, en una mirada.</p></div>
+        <div><div class="k">Debe incluir</div><ul><li>"In place": tres puntos como máximo</li><li>"Next": tres puntos como máximo</li><li>Una frase de cierre propia</li></ul></div>
+      </div></div></li>
+
+    <li class="slide"><div class="num">13</div><div>
+      <div class="head"><h3>Thank you</h3><span class="tpl">Cierre del template</span>
+        <div class="tags"><span class="tag on">10 s</span><span class="tag on">práctica 5 s</span></div></div>
+      <div class="grid2">
+        <div><div class="k">Debe incluir</div><p>Nombre y departamento. Se abre a preguntas.</p></div>
+      </div></div></li>
+  </ol>
+
+  <h2>Reglas comunes</h2>
+  <div class="rules">
+    <div class="card"><h3>Títulos</h3><ul>
+      <li>El título dice la conclusión, no el tema.</li>
+      <li>Sí: "Same part, 47% less cycle time". No: "Results".</li>
+      <li>Debajo, una línea corta que diga la sección.</li>
+    </ul></div>
+    <div class="card"><h3>Estados</h3><ul>
+      <li>Habilidades: Achieved, In progress, Not started.</li>
+      <li>Compromisos: Done, On track, At risk, Late.</li>
+      <li>Las mismas palabras en todas las presentaciones, sin sinónimos.</li>
+    </ul></div>
+    <div class="card"><h3>Colores con significado</h3><ul>
+      <li><span class="sw" style="background:var(--real)"></span>Real, lo que sí pasó</li>
+      <li><span class="sw" style="background:var(--plan)"></span>Plan, lo que estaba programado</li>
+      <li><span class="dia"></span>Hito: examen, validación o arranque</li>
+      <li>Línea punteada: hoy. Son los colores del cronograma de planta.</li>
+    </ul></div>
+    <div class="card"><h3>Números y fechas</h3><ul>
+      <li>Todo número lleva unidad: s, min, pcs, %, h.</li>
+      <li>Antes y después siempre con la misma unidad.</li>
+      <li>Fechas como "October 26, 2026"; semanas como "week 44".</li>
+    </ul></div>
+    <div class="card"><h3>Texto</h3><ul>
+      <li>Frases cortas en la diapositiva, el detalle se dice en voz alta.</li>
+      <li>Puntuación normal: punto, coma, dos puntos. Sin guiones largos.</li>
+      <li>Lenguaje para alguien que no es del proceso. Siglas explicadas la primera vez.</li>
+    </ul></div>
+    <div class="card"><h3>Archivo y notas</h3><ul>
+      <li>Template corporativo, sin cambiar el maestro ni los layouts.</li>
+      <li>Notas del orador: solo puntos clave por diapositiva, no guion.</li>
+      <li>Nombre: Tenneco_FollowUp2_Proceso_Nombre.pptx</li>
+    </ul></div>
+  </div>
+
+  <h2>Indicadores para la diapositiva 10</h2>
+  <p style="margin-bottom:14px;color:var(--muted)">Ejemplos para arrancar. Cada becario elige los que mida de verdad en su proceso; lo que se homologa es el formato: antes, después, unidad y fuente.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Proceso</th><th>Tiempo</th><th>Calidad</th><th>Persona o disponibilidad</th></tr></thead>
+    <tbody>
+      <tr><td><b>Soldadura robotizada</b></td><td>Tiempo de ciclo por pieza (s)</td><td>Piezas con retrabajo o defecto (%)</td><td>Soldadura manual eliminada, ergonomía</td></tr>
+      <tr><td><b>Fuji y Canning</b></td><td>Tiempo de ciclo o de cambio de modelo (min)</td><td>Scrap o rechazo (%)</td><td>Paros por ajuste (min por turno)</td></tr>
+      <tr><td><b>Doblado de tubo</b></td><td>Tiempo de preparación (min)</td><td>Tubos fuera de dimensión (pcs o %)</td><td>Paros de la dobladora (min)</td></tr>
+      <tr><td><b>Layouts y números de parte</b></td><td>Tiempo para dar de alta un número de parte (h)</td><td>Errores encontrados y corregidos (pcs)</td><td>Números de parte o layouts actualizados (pcs)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Antes de presentar</h2>
+  <div class="card"><ul class="check">
+    <li>Las 13 diapositivas están, en este orden.</li>
+    <li>Cada título dice una conclusión.</li>
+    <li>La diapositiva 5 usa los compromisos de la revisión anterior, uno por uno.</li>
+    <li>El Gantt tiene real, plan, línea de hoy e hitos con los colores del estándar.</li>
+    <li>Los totales de habilidades cuadran entre las diapositivas 7, 8 y 12.</li>
+    <li>Cada número tiene unidad y fuente.</li>
+    <li>Ninguna diapositiva tiene párrafos; el detalle está en las notas.</li>
+    <li>Ensayada con cronómetro: 15 min, y 7.5 min con las diapositivas 4 y 9 ocultas.</li>
+  </ul></div>
+
+  <footer>Versión 1, octubre de 2026. Cada becario agrega su propia hoja de objetivo y su matriz ILUO; la estructura no cambia por proceso.</footer>
+</div>
