@@ -292,9 +292,11 @@ G_ROWS = [
     ("Level L, on my own", "Floor validation, date to be set", (0, TODAY), None, None),
     ("Level U, programming", "SKS programs and parameters", (5, TODAY), (TODAY, 23), None),
     ("Level O, improve and teach", "Training team members, problem solving", (0, TODAY), (TODAY, 23), None),
-    ("DOC and DPF, 95%", "PVs in 4M, PPAP in week 1", (0, TODAY), (TODAY, 22), 22.5),
-    ("Metrology recovery", "DPF parallelism, 8 parts remade", (8, 11), None, None),
-    ("SCR, new model", "PVs of two models, released", (8, TODAY), (TODAY, 23), None),
+    ("DOC and DPF, 95%", "PPAP in November, production in January", (0, TODAY), (TODAY, 23),
+     [(13.5, "PPAP", "r"), (22.5, "Production", "l")]),
+    ("Metrology recovery", "PV corrections: 18 DOC, 7 DPF", (8, 11), None, None),
+    ("SCR, new model", "Endout: 7 PVs. Sideout on hold", (8, TODAY), (TODAY, 23),
+     [(22.5, "PPAP", "l")]),
 ]
 for k, (lab, det, real, plan, mile) in enumerate(G_ROWS):
     y = 2.18 + k * 0.44
@@ -311,10 +313,15 @@ for k, (lab, det, real, plan, mile) in enumerate(G_ROWS):
              shape=MSO_SHAPE.DIAMOND)
         text(s, gx(8.5) + 0.18, y + 0.08, 2.2, 0.22, "Week 40, moved", 9, GRAY)
     elif mile is not None:
-        rect(s, gx(mile) - 0.11, y + 0.08, 0.22, 0.22, fill=WHITE,
-             shape=MSO_SHAPE.DIAMOND)
-        text(s, gx(mile) - 1.05, y + 0.08, 0.85, 0.22, "PPAP", 9, NAVY,
-             bold=True, align=PP_ALIGN.RIGHT)
+        for wk, tag, side in mile:
+            rect(s, gx(wk) - 0.11, y + 0.08, 0.22, 0.22, fill=WHITE,
+                 shape=MSO_SHAPE.DIAMOND)
+            if side == "r":
+                text(s, gx(wk) + 0.17, y + 0.08, 1.0, 0.22, tag, 9, NAVY,
+                     bold=True)
+            else:
+                text(s, gx(wk) - 1.25, y + 0.08, 1.05, 0.22, tag, 9, NAVY,
+                     bold=True, align=PP_ALIGN.RIGHT)
 rect(s, gx(TODAY), 2.12, 0.0, 3.55, line=LIME, lw=1.5, dash="dash")
 text(s, gx(TODAY) - 0.7, 5.72, 1.4, 0.22, "Today, Oct 26", 9, LIME, bold=True,
      align=PP_ALIGN.CENTER)
@@ -329,7 +336,8 @@ notes(s,
       "Green is real, light blue is plan, same as the plant Excel.",
       "Weeks 40 to 42: metrology recovery and SCR start, in parallel.",
       "Level I theory runs in parallel; the exam moved from week 40.",
-      "DOC and DPF at 95%, PPAP in the first week of January.")
+      "DOC and DPF at 95%: PPAP in November, production in January.",
+      "SCR: PPAP in January; sideout is on hold for metrology.")
 
 # ============================================================ 7 · ILUO status
 s = new_slide("15 of 23 skills achieved, only 2 not started",
@@ -382,12 +390,12 @@ s = new_slide("October’s firefight taught me more than the plan",
 glass(s, 0.28, 1.75, 6.10, 3.55, name="!! Glass A")
 label(s, 0.68, 2.05, "WHAT HAPPENED")
 tb, tf = txbox(s, 0.68, 2.50, 5.35, 2.7)
-para(tf, "DPF parts that were already released started failing "
+para(tf, "DOC and DPF parts that were already released started failing "
      "metrology. A metrology expert measured everything again: the main "
      "failure was parallelism.", 14, WHITE, first=True, spacing=1.1)
 para(tf, "At the same time the SCR model started: bigger, heavier and "
-     "harder to build, with more machines and processes.", 14, GRAY,
-     space_before=12, spacing=1.1)
+     "harder to build. One of its two models, sideout, is on hold for "
+     "metrology too.", 14, GRAY, space_before=12, spacing=1.1)
 glass(s, 6.70, 1.75, 6.35, 3.55, name="!! Glass B")
 label(s, 7.10, 2.05, "WHAT I LEARNED ON THE FLOOR")
 LEARN = ["Dimensional adjustments on welding fixtures",
@@ -411,28 +419,38 @@ notes(s,
       "SCR: bigger, heavier, more processes than DOC and DPF.")
 
 # ============================================================ 9 · project
-s = new_slide("Industrialization: DOC and DPF at 95%, SCR started",
+s = new_slide("Industrialization: DOC and DPF go to PPAP in November",
               "Project  |  MY27 Cummins program, together with Engineering", True)
 glass(s, 0.28, 1.75, 6.35, 4.25, name="!! Glass A")
-BLOCKS = [("THE PROBLEM", "DPF parts already released failed metrology: "
-           "parallelism out of tolerance."),
+BLOCKS = [("THE PROBLEM", "DOC and DPF parts already released failed "
+           "metrology. The main failure: parallelism."),
           ("WHAT WE DID", "A metrology expert measured everything again, and "
-           "we remade 8 DPF parts: 4 short and 4 long canning."),
-          ("WHERE IT STANDS", "DOC and DPF at 95%, only documentation left. "
-           "SCR started in October: 7 PV parts of each of two models, "
-           "released.")]
+           "we corrected 25 PV parts: 18 DOC, 3 long and 4 short canning."),
+          ("WHERE IT STANDS", "DOC and DPF at 95%: PPAP in November, "
+           "production in January. SCR: 7 endout parts built, sideout on "
+           "hold, PPAP in January.")]
 for k, (lab, d) in enumerate(BLOCKS):
     y = 2.05 + k * 1.30
     label(s, 0.68, y, lab)
     tb, tf = txbox(s, 0.68, y + 0.40, 5.6, 0.85)
     para(tf, d, 13, NAVY, first=True, spacing=1.1)
-photo(s, 6.98, 1.75, 6.07, 2.02, "DPF parts or the metrology check",
+photo(s, 6.98, 1.75, 6.07, 2.02, "DOC and DPF parts, or the metrology check",
       "!! Glass B")
-photo(s, 6.98, 3.98, 6.07, 2.02, "The SCR model", "!! Glass C")
+# Diego's time this month: 70 % on the project, 30 % at the cells
+glass(s, 6.98, 3.98, 6.07, 2.02, name="!! Glass C")
+text(s, 7.35, 4.18, 5.4, 0.3, "MY TIME THIS MONTH", 16, BLUE, bold=True)
+text(s, 7.35, 4.60, 1.5, 0.6, "70%", 30, BLUE, bold=True)
+text(s, 8.85, 4.70, 3.9, 0.45, "industrialization, with Engineering", 13,
+     NAVY, bold=True)
+rect(s, 7.35, 5.30, 5.35, 0.14, fill=NAVY, opacity=15)
+rect(s, 7.35, 5.30, 5.35 * 0.7, 0.14, fill=BLUE)
+text(s, 7.35, 5.55, 5.4, 0.3, "30%  support at the robotic cells", 12, SLATE)
 notes(s,
-      "Problem: parallelism on DPF parts that were already released.",
-      "Action: full re-measurement with a metrology expert, 8 DPF remade.",
-      "Status: DOC and DPF 95%, only documents; SCR started, 14 PVs released.")
+      "Problem: parallelism on parts that were already released.",
+      "Action: full re-measurement with a metrology expert, 25 PVs corrected.",
+      "DOC and DPF: PPAP in November, production in January.",
+      "SCR: endout 7 parts; sideout stopped, no measurement assured yet.",
+      "My time: 70% industrialization, 30% cells (it was 60/40).")
 
 # ============================================================ 10 · results
 s = new_slide("DOC and DPF moved from 90% to 95%",
@@ -449,11 +467,11 @@ for k, (when, pct, hot) in enumerate((("September 25", 90, False),
          fill=LIME if hot else GRAY, opacity=100 if hot else 70)
     text(s, 7.38, y, 1.0, 0.35, "%d%%" % pct, 16, LIME if hot else WHITE,
          bold=True)
-text(s, 0.68, 3.82, 7.4, 0.3, "Only documentation left. PPAP in the first "
-     "week of January.", 12, GRAY)
+text(s, 0.68, 3.82, 7.4, 0.3, "Only documentation left. PPAP in November, "
+     "production in January.", 12, GRAY)
 KPI10 = [("17", "PV parts in 4M", "9 DOC, 4 DPF short, 4 DPF long"),
-         ("8", "DPF parts remade", "after re-measuring parallelism"),
-         ("14", "SCR PV parts", "two models, 7 each, released")]
+         ("25", "PV parts corrected", "18 DOC, 3 DPF long, 4 DPF short"),
+         ("7", "SCR endout parts", "sideout on hold for metrology")]
 for i, (big, lab, det) in enumerate(KPI10):
     x = 0.68 + i * 2.55
     text(s, x, 4.30, 2.4, 0.6, big, 30, LIME, bold=True)
@@ -470,7 +488,8 @@ text(s, 9.25, 5.35, 3.6, 0.4, "Data: engineering team, October 2026", 9, DIM)
 notes(s,
       "Before and after: 90% on September 25, 95% today.",
       "17 PVs ran in the 4M cell, the improvement from last time.",
-      "8 DPF remade after the metrology check; 14 SCR PVs already released.")
+      "25 PVs corrected after the metrology check.",
+      "SCR: 7 endout parts built; sideout stopped by metrology.")
 
 # ============================================================ 11 · next steps
 s = new_slide("Next: set the exam dates, then Level U",
@@ -480,7 +499,7 @@ label(s, 0.68, 2.05, "WHAT COMES NEXT")
 NEXT = [("Level I exam and Level L floor validation", "Dates to be set with my supervisor"),
         ("Level U: SKS programs and welding parameters", "November to December"),
         ("Level O: problem solving and the next improvement", "November to December"),
-        ("DOC and DPF PPAP", "First week of January")]
+        ("PPAP: DOC and DPF in November, SCR in January", "DOC and DPF production starts in January")]
 for k, (t, when) in enumerate(NEXT):
     y = 2.55 + k * 0.82
     if k:
@@ -508,11 +527,11 @@ label(s, 0.68, 2.05, "IN PLACE")
 glass(s, 6.98, 1.75, 6.07, 4.05, name="!! Glass B")
 label(s, 7.38, 2.05, "NEXT")
 INPLACE = ["15 of 23 skills achieved; Levels I and L done on my own.",
-           "DOC and DPF at 95%, and SCR started with 14 PV parts released.",
+           "DOC and DPF at 95%, with 25 PV parts corrected after metrology.",
            "A month of real problem solving: fixtures, parameters and training."]
 NEXTS = ["Set and pass the Level I exam and the Level L validation.",
          "Reach Level U before January.",
-         "Support the DOC and DPF PPAP in the first week of January."]
+         "Support the DOC and DPF PPAP in November, and SCR’s in January."]
 for x, items, w in ((0.68, INPLACE, 5.55), (7.38, NEXTS, 5.27)):
     for k, t in enumerate(items):
         text(s, x, 2.55 + k * 1.00, w, 0.8, t, 14, WHITE)

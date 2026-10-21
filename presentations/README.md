@@ -71,15 +71,15 @@ title slide now reads "Follow-up 2 | October 26, 2026".
 | Slide | Content |
 |---|---|
 | 5 | Commitments from September 25 and their state: 1 done, 2 late, 2 on track |
-| 6 | Gantt with today's line at week 44, the exam marked as moved, and PPAP in week 1 |
+| 6 | Gantt with today's line at week 44, the exam marked as moved, DOC and DPF PPAP in November, and production and SCR PPAP in January |
 | 7 | Skills: 15 achieved, 6 in progress, 2 not started |
 | 8 | What was learned in October's firefight |
-| 9 | Industrialization: the metrology recovery and the start of SCR |
-| 10 | Results: DOC and DPF at 95%, the PV counts, and 4M still at 93 s |
+| 9 | Industrialization: the metrology recovery, the start of SCR, and time split 70% industrialization, 30% cells |
+| 10 | Results: DOC and DPF at 95%, 17 PV parts in 4M, 25 PV parts corrected (18 DOC, 3 long, 4 short), 7 SCR endout parts (sideout on hold), and 4M still at 93 s |
 | 11 | Next steps |
 | 12 | Conclusions |
 
-**Short version.** For the 7.5-minute practice, hide slides 4 and 9.
+This is the 15-minute version, with all 13 slides shown.
 
 ## Rebuilding
 
