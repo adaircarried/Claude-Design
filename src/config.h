@@ -135,8 +135,41 @@
                                         /* de empezar a moverse                */
 
 /* ===========================================================================
- * 6. HOMING
+ * 6. REFERENCIADO (HOMING)
  * ===========================================================================
+ * Dos modos, elegidos con HOMING_MODE:
+ *
+ *  HOMING_TAUGHT_ZERO  (el que se usa ahora: el brazo NO tiene finales de
+ *    carrera). El cero se ENSEÑA: se lleva el brazo a una pose de referencia
+ *    conocida (marcas o una pieza impresa que lo calza), se energiza y el
+ *    comando SETZERO le asigna esos angulos. El supervisor deja de vigilar
+ *    los GPIO 16 y 17, que quedarian flotando y se leerian como "pisado".
+ *
+ *    El cero no necesita ser EXACTO, solo REPETIBLE: los puntos enseñados se
+ *    graban con el mismo desvio y vuelven a caer donde deben. Hay que hacerlo
+ *    en cada encendido (sin corriente el brazo cae y la posicion se pierde),
+ *    y los pasos perdidos no se detectan: no hay contra que compararlos.
+ *
+ *  HOMING_SWITCHES  rutina de dos pasadas contra finales de carrera (HOME).
+ *    Se conserva por si se montan los switches mas adelante.
+ * -------------------------------------------------------------------------*/
+#define HOMING_SWITCHES         0
+#define HOMING_TAUGHT_ZERO      1
+#define HOMING_MODE             HOMING_TAUGHT_ZERO
+
+/* Pose de referencia que asigna SETZERO sin argumentos.
+ * Brazo horizontal (q1 = 0) y antebrazo colgando en vertical (q2 = -90):
+ *   - se alinea facil: el brazo con un nivel o una escuadra, y el antebrazo
+ *     cae solo a la vertical por gravedad
+ *   - el efector queda en (200, -150) mm, dentro del espacio de trabajo y
+ *     lejos de los limites articulares
+ *   - es la rama de codo ARRIBA (q2 < 0), asi que un MOVL funciona justo
+ *     despues del SETZERO, sin MOVJ previo
+ * AJUSTAR si la pieza de referencia impresa calza el brazo en otra pose. */
+#define ZERO_POSE_Q1_DEG        (0.0f)
+#define ZERO_POSE_Q2_DEG        (-90.0f)
+
+/* --- Parametros del modo HOMING_SWITCHES ---------------------------------
  * Rutina de dos pasadas: aproximacion rapida, retroceso, aproximacion lenta.
  * La segunda pasada es la que fija el cero: a baja velocidad la dispersion del
  * microswitch mecanico baja de ~0.3 mm a ~0.02 mm.

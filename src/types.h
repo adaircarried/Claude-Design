@@ -31,7 +31,11 @@ typedef enum {
     MOTION_GRIPPER = 5,   /* RESERVADO PARCIAL 3: abrir/cerrar la pinza.
                              Se declara ya para que el enum no cambie de
                              numeracion cuando llegue el momento.           */
-    MOTION_TEST    = 6    /* prueba de perdida de pasos (ver motion.cpp)   */
+    MOTION_TEST    = 6,   /* prueba de perdida de pasos (ver motion.cpp)   */
+    MOTION_SETZERO = 7    /* cero enseñado: "la pose actual vale target_a,
+                             target_b grados". Va por la cola, y no como
+                             llamada directa, para que nunca se redefina la
+                             posicion con un movimiento a medias.          */
 } MotionType_t;
 
 /* ---------------------------------------------------------------------------

@@ -19,13 +19,18 @@ pio device monitor       # consola a 115200 baudios
 pio test -e native       # tests de cinemática en la PC, sin ESP32
 ```
 
-Secuencia de arranque en la consola:
+**Antes del firmware, la prueba de banco** (§6): carga el entorno
+`bench_motor`, un programa mínimo que solo comprueba el cableado.
+
+Secuencia de arranque del firmware en la consola (modo sin finales de carrera,
+el que se usa ahora):
 
 ```
+(lleva el brazo a la pose de referencia: brazo horizontal, antebrazo colgando)
 ENABLE      energiza los motores (arrancan libres a propósito)
-HOME        referencia ambos ejes; el codo va primero
+SETZERO     esa pose pasa a ser la referencia
 STATUS      comprueba que la posición sea la esperada
-MOVJ -45 90 ya puedes moverte
+MOVJ 30 -60 ya puedes moverte
 ```
 
 ---
@@ -72,19 +77,39 @@ MOVJ -45 90 ya puedes moverte
         └─────────────────┘
 ```
 
-> **La tierra común no es opcional.** Si el GND del ESP32 y el de la etapa de
-> potencia no están unidos, los pulsos se pierden de forma aleatoria e
-> intermitente: es el fallo más difícil de diagnosticar de todo el montaje,
-> porque el sistema funciona "casi siempre".
+> **Qué GND va con qué.** Las entradas `PUL`, `DIR` y `ENA` del TB6600 son
+> **optoacopladas**: cada par `+`/`−` es el LED de un optoacoplador. La
+> corriente de la señal sale del GPIO, pasa por el LED y **regresa por el
+> terminal `−` al GND del ESP32**. Por eso `PUL−`, `DIR−` y `ENA−` sí tienen
+> que ir al GND del ESP32: si falta ese regreso, los pulsos se pierden de forma
+> aleatoria.
+>
+> Lo que **no** hay que hacer es unir el GND del ESP32 con el negativo de la
+> fuente de 24 V. El optoacoplador existe precisamente para separar la lógica
+> de la potencia; unirlas anula el aislamiento y deja que el ruido de los
+> motores llegue al ESP32. *(Una versión anterior de este README decía lo
+> contrario: estaba mal.)*
+>
+> **Sobre `ENA`:** en el TB6600, con el LED de `ENA` encendido el driver se
+> **desactiva**. Por eso el firmware lo trata como activo en bajo: GPIO 27 en
+> bajo = motores energizados. Si dejas `ENA` sin conectar, el driver queda
+> **siempre energizado**; sirve de plan B si sospechas del cableado de `ENA`.
 
 ### 3.2 Potencia
 
 ```
-   Fuente 24 V ──┬── (+) ──┬── VCC TB6600 #1 ──┐
-                 │         │                   ├── 100 µF cada uno
-                 │         └── VCC TB6600 #2 ──┘
-                 └── (−) ─────  GND común ───── GND del ESP32
+   Fuente 24 V  V+ ──┬──────────── VCC  TB6600 #1 ─┐ 100 µF entre VCC y GND
+                     └──────────── VCC  TB6600 #2 ─┤ de cada driver, pegado
+                V− ──┬──────────── GND  TB6600 #1 ─┤ a sus bornes
+                     └──────────── GND  TB6600 #2 ─┘
+
+   (el V− de la fuente NO se une al GND del ESP32: ver la nota de §3.1)
 ```
+
+> **El lado de 220/127 V de la fuente es peligroso.** Si es una fuente
+> metálica abierta, los bornes `L`, `N` y tierra están a la tensión de la red.
+> Usa un cable con clavija, conecta la tierra física, tapa los bornes y nunca
+> los toques con la fuente enchufada.
 
 El **capacitor de 100 µF en la entrada de cada driver** absorbe la energía que
 el motor devuelve al frenar. Sin él, la tensión de bus sube en cada
@@ -109,6 +134,10 @@ dan unos pocos ohmios entre sí; entre bobinas distintas, circuito abierto.
 > manipula el conector.
 
 ### 3.4 Finales de carrera (NC)
+
+> **Ahora mismo el brazo no lleva finales de carrera** y el firmware está en
+> modo `HOMING_TAUGHT_ZERO` (cero enseñado con `SETZERO`), donde los GPIO 16 y
+> 17 no se vigilan. Esta sección aplica si se montan más adelante.
 
 ```
    GPIO 16 ──┬── contacto NC ── GND
@@ -142,18 +171,29 @@ Los seis interruptores se dividen en micropaso (S1–S3) y corriente (S4–S6).
 
 ### Micropaso — usar 1/16
 
-| S1 | S2 | S3 | Micropaso | Pulsos/vuelta del motor |
-|---|---|---|---|---|
-| ON | ON | ON | full step | 200 |
-| ON | ON | OFF | 1/2 | 400 |
-| OFF | ON | OFF | 1/4 | 800 |
-| ON | OFF | OFF | 1/8 | 1600 |
-| **OFF** | **OFF** | **OFF** | **1/16** | **3200** |
-| OFF | ON | ON | 1/32 | 6400 |
+Tabla del TB6600 más común (la de DFRobot y la mayoría de sus clones):
 
-**Usa 1/16 → S1=OFF, S2=OFF, S3=OFF.** Si cambias de micropaso, tienes que
-cambiar `MICROSTEPS` en `config.h`, o todos los ángulos quedarán escalados por
-el factor equivocado y el robot se moverá lo que no es.
+| S1 | S2 | S3 | Micropaso | Pulsos por vuelta del motor |
+|---|---|---|---|---|
+| ON | ON | OFF | 1 (paso completo) | 200 |
+| ON | OFF | ON | 1/2 | 400 |
+| ON | OFF | OFF | 1/4 | 800 |
+| OFF | ON | OFF | 1/8 | 1600 |
+| **OFF** | **OFF** | **ON** | **1/16** | **3200** |
+| OFF | OFF | OFF | 1/32 | 6400 |
+
+**Usa 1/16 → S1 = OFF, S2 = OFF, S3 = ON**, *siempre que coincida con la
+etiqueta de tu driver*. *(Una versión anterior de este README daba
+OFF-OFF-OFF, que en esta tabla es 1/32: el robot se habría movido la mitad.)*
+
+**Compruébalo con el programa de banco, no con la tabla.** La tecla `1`
+manda 4000 pulsos, que a 1/16 son **1.25 vueltas exactas del eje del motor**.
+Si ves 2.5 vueltas estás en 1/8; si ves 0.625, en 1/32. La tecla `5` manda
+16 000 pulsos: la **salida del reductor** debe dar una vuelta exacta, lo que
+valida a la vez el micropaso y el 5:1.
+
+Si cambias de micropaso, cambia `MICROSTEPS` en `config.h`; si no, todos los
+ángulos quedan escalados por el factor equivocado.
 
 Por qué 1/16 y no más: el micropasado fino mejora la suavidad, pero el par
 incremental por micropaso cae con el seno del ángulo. Pasado 1/16 estás
@@ -162,7 +202,7 @@ y además ya estás muy por debajo del backlash del reductor (ver §7).
 
 ### Corriente — empezar en 1.5 A
 
-| S4 | S5 | S6 | Corriente pico | Corriente RMS |
+| S4 | S5 | S6 | Corriente | Pico |
 |---|---|---|---|---|
 | ON | ON | ON | 0.5 A | 0.7 A |
 | ON | OFF | ON | 1.0 A | 1.2 A |
@@ -170,9 +210,9 @@ y además ya estás muy por debajo del backlash del reductor (ver §7).
 | ON | OFF | OFF | 2.0 A | 2.2 A |
 | OFF | ON | ON | 2.5 A | 2.7 A |
 
-Los motores son de 1.7 A por fase. **Empieza en 1.5 A**, no en el máximo: es
-suficiente para mover el brazo y el driver se calienta mucho menos. Sube solo
-si el comando `TEST` revela pérdida de pasos bajo carga.
+Los motores son de 1.7 A por fase. **Empieza en 1.5 A**: es suficiente para
+mover el brazo y el driver se calienta mucho menos. Sube un escalón solo si el
+motor pierde pasos con carga.
 
 > Las tablas serigrafiadas varían entre fabricantes de clones de TB6600.
 > **Contrasta siempre con la etiqueta de tu driver**, no con esta tabla.
@@ -196,7 +236,7 @@ en saturar y el flanco llega degradado.
    ESP32 GPIO 26 ──┤ 2A      2Y ├──── DIR+
    ESP32 GPIO 27 ──┤ 3A      3Y ├──── ENA+
                    │  74AHCT125  │
-              5V ──┤ VCC     GND ├── GND común
+   5V del ESP32 ──┤ VCC     GND ├── GND del ESP32
                    │  (1OE,2OE,3OE a GND) │
 ```
 
@@ -218,27 +258,44 @@ librería. El buffer conserva la polaridad y evita todo el problema.
 
 ## 6. Puesta a punto paso a paso
 
-1. **Solo lógica.** Conecta el ESP32 por USB, con los 24 V apagados. Flashea.
-   Abre el monitor. Debe aparecer el banner con la resolución y el alcance.
-2. **Comprueba los finales de carrera.** `STATUS`, pulsa cada switch a mano,
-   `STATUS` otra vez. Ver §3.4.
-3. **Comprueba el sentido de giro.** Enciende los 24 V. `ENABLE`, después
-   `JOG 1 5`. Si el eje gira al revés de lo esperado, cambia
-   `A1_DIR_HIGH_COUNTS_UP` en `config.h` y vuelve a flashear.
-   **No recablees el motor**: hay que apagar la fuente para hacerlo, y es un
-   cambio de una línea en el código.
-4. **Comprueba que el homing va hacia el switch.** `JOG 1 -5` debe acercar el
-   eje 1 a su final de carrera. Si se aleja, invierte `A1_HOMING_DIR`.
-5. **Primer HOME.** Ten la mano sobre el interruptor de la fuente. Si algo va
-   mal, `STOP` detiene en milisegundos.
-6. **Ajusta los límites articulares.** Con `JOG`, recorre a mano hasta los
-   topes mecánicos reales y anota los ángulos con `STATUS`. Escribe esos
-   valores (con un par de grados de margen) en `A1_MIN_DEG`, `A1_MAX_DEG`,
-   `A2_MIN_DEG`, `A2_MAX_DEG`.
-7. **Mide la pérdida de pasos.** `TEST 4444 20`. Ver §7.
-8. **Ajusta la corriente.** Sube el DIP de corriente solo si `TEST` acusa
-   deriva. Toca el disipador del driver tras unos minutos de trabajo: si
-   quema, baja la corriente o añade ventilación.
+Se avanza **de lo más simple a lo más complejo**, y cada etapa solo empieza
+cuando la anterior funciona. Todo se puede hacer con los motores **sueltos
+sobre la mesa**, sin el brazo montado.
+
+| Etapa | Programa | Qué valida |
+|---|---|---|
+| A | `bench_motor` | Cableado, DIP switches, fuente, corriente, sentido de giro |
+| B | `esp32dev`, consola de texto | FastAccelStepper, tareas, sincronía de MOVJ, STOP |
+| C | `esp32dev` + pendant en la PC | Protocolo binario de la U2 |
+
+**Etapa A — `bench_motor`.** En VS Code, panel de la hormiga → *Project
+Tasks* → `bench_motor` → *Upload and Monitor*. Comandos de una tecla:
+
+1. `e` energiza. El eje debe resistirse si intentas girarlo a mano.
+2. `1`: el eje del **motor** da **1.25 vueltas**. `2` lo regresa.
+3. `5`: la **salida del reductor** da **1 vuelta exacta** (5 del motor).
+4. Lo mismo con `3`, `4` y `6` para el motor 2.
+5. `v` sube la velocidad hasta 3200 Hz: debe seguir girando sin perder pasos.
+
+Si el motor vibra sin girar, una bobina está mal emparejada. Si no hace nada,
+revisa con la tecla `d` y el multímetro que llegan 3.3 V entre `DIR+` y
+`DIR−`.
+
+**Etapa B — firmware con la consola** (entorno `esp32dev`):
+
+1. `ENABLE`, luego `JOG 1 90`: el mismo 1.25 vueltas que en la etapa A, pero
+   ahora generado por el hardware del ESP32. Si la etapa A funcionó y esta no,
+   el problema es de software, no de cableado.
+2. Si un eje gira al revés de lo que esperas, cambia `A1_DIR_HIGH_COUNTS_UP`
+   (o `A2_…`) en `config.h`. **No recablees el motor.**
+3. `SETZERO` y después `MOVJ 45 -45`: los **dos** ejes deben arrancar y
+   **terminar a la vez**, aunque recorran distancias distintas. Pon una tira
+   de cinta en cada eje para verlo.
+4. Un `MOVJ` largo y `STOP` a mitad: frena con rampa y **sigue sujetando**.
+5. Toca el disipador de cada driver tras unos minutos: tibio es normal; si
+   quema, baja la corriente.
+
+**Etapa C** — cuando esté el protocolo de la U2: ver `docs/PROTOCOLO_U2.md`.
 
 ---
 
@@ -309,7 +366,7 @@ cercana no es alcanzable.
 
 | Síntoma | Causa probable | Qué hacer |
 |---|---|---|
-| Pasos perdidos aleatorios, sin patrón | falta tierra común | unir GND del ESP32 y de potencia |
+| Pasos perdidos aleatorios, sin patrón | falta el regreso de la señal | `PUL−`, `DIR−` y `ENA−` bien apretados al GND del ESP32 (§3.1) |
 | Pasos perdidos solo a alta velocidad | 3.3 V insuficientes para el opto | buffer 74AHCT125 (§5) |
 | Pierde un paso al invertir el sentido | tiempo de establecimiento de DIR | subir `DIR_CHANGE_DELAY_US` |
 | Zumbido con el eje parado | corriente demasiado alta | bajar el DIP de corriente |

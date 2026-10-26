@@ -62,9 +62,17 @@ static void print_banner(void)
                   (double)A2_MIN_DEG, (double)A2_MAX_DEG);
     report_line("-----------------------------------------------------");
     report_line(" Los drivers arrancan LIBRES. Secuencia de arranque:");
-    report_line("   1) ENABLE     energiza los motores");
-    report_line("   2) HOME       referencia (el codo va primero)");
-    report_line("   3) ya puedes usar MOVJ / MOVL");
+    if (HOMING_MODE == HOMING_SWITCHES) {
+        report_line("   1) ENABLE     energiza los motores");
+        report_line("   2) HOME       referencia (el codo va primero)");
+    } else {
+        report_line("   1) lleva el brazo a la pose de referencia");
+        report_printf("      (q1=%.0f, q2=%.0f: brazo horizontal, antebrazo colgando)\n",
+                      (double)ZERO_POSE_Q1_DEG, (double)ZERO_POSE_Q2_DEG);
+        report_line("   2) ENABLE     energiza: los motores sostienen la pose");
+        report_line("   3) SETZERO    esa pose pasa a ser la referencia");
+    }
+    report_line("   despues ya puedes usar MOVJ / MOVL. JOG funciona sin referencia.");
     report_line(" HELP para la lista completa de comandos.");
     report_line("=====================================================");
 }

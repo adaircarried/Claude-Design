@@ -104,7 +104,7 @@ void TaskSupervisor(void *pv)
      * Avisar aqui ahorra un buen rato de desconcierto.
      * ------------------------------------------------------------------ */
     vTaskDelay(pdMS_TO_TICKS(250));          /* deja terminar el banner */
-    if (sv_limit_raw(1) && sv_limit_raw(2)) {
+    if (HOMING_MODE == HOMING_SWITCHES && sv_limit_raw(1) && sv_limit_raw(2)) {
         report_line("AVISO: los dos finales de carrera leen PISADO.");
         report_line("       Si aun no los has conectado, es lo esperado:");
         report_line("       contacto NC + pull-up interno = alto = pisado.");
@@ -138,7 +138,10 @@ void TaskSupervisor(void *pv)
                         && st != STATE_HOMING
                         && st != STATE_BOOT;
 
-        const bool limit_now = sv_limit_raw(1) || sv_limit_raw(2);
+        /* Sin finales de carrera montados, los GPIO 16 y 17 flotan a alto y se
+         * leerian como "pisado": en ese modo no se miran en absoluto. */
+        const bool limit_now = (HOMING_MODE == HOMING_SWITCHES)
+                            && (sv_limit_raw(1) || sv_limit_raw(2));
 
         if (watch) {
 

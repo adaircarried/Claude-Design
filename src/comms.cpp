@@ -91,7 +91,10 @@ static bool enqueue(MotionType_t t, float a, float b, uint8_t axis, int32_t aux)
 static void print_help(void)
 {
     report_line("--- COMANDOS ---");
-    report_line("HOME                 referenciado de ambos ejes (codo primero)");
+    if (HOMING_MODE == HOMING_SWITCHES)
+        report_line("HOME                 referenciado de ambos ejes (codo primero)");
+    else
+        report_line("SETZERO [q1 q2]      la pose actual es el cero (sin argumentos: la de config.h)");
     report_line("JOG <eje> <grados>   mueve un eje, relativo, lento. eje = 1 o 2");
     report_line("MOVJ <q1> <q2>       interpolacion articular, ejes sincronizados");
     report_line("MOVL <x> <y>         interpolacion lineal en mm, efector en recta");
@@ -146,7 +149,37 @@ static void handle_line(char *line)
     if (!strcmp(cmd, "STATUS")) { telemetry_status_report(); return; }
     if (!strcmp(cmd, "HELP") || !strcmp(cmd, "?")) { print_help(); return; }
 
+    if (!strcmp(cmd, "SETZERO")) {
+        /* SETZERO          -> asigna la pose de referencia de config.h
+         * SETZERO q1 q2    -> asigna los angulos indicados */
+        const float q1 = a1 ? (float)atof(a1) : ZERO_POSE_Q1_DEG;
+        const float q2 = a2 ? (float)atof(a2) : ZERO_POSE_Q2_DEG;
+        if (a1 && !a2) { report_line("ERR SINTAXIS: SETZERO  o  SETZERO <q1> <q2>"); return; }
+        /* Con los drivers libres el brazo se mueve con la mano o cae: fijar el
+         * cero en ese estado no tendria sentido. */
+        if (!sv_drivers_enabled()) {
+            report_line("ERR DISABLED: lleva el brazo a la referencia, ENABLE y luego SETZERO");
+            return;
+        }
+        if (!kin_joints_in_limits(q1, q2)) {
+            report_printf("ERR JOINT_LIMIT q1=%.2f q2=%.2f fuera de los limites articulares\n", q1, q2);
+            return;
+        }
+        const Point_t p = kin_forward(q1, q2);
+        if (kin_point_in_workspace(p.x, p.y) != IK_OK) {
+            report_printf("ERR WORKSPACE la pose (%.2f, %.2f) deja el efector en (%.1f, %.1f) mm\n",
+                          q1, q2, p.x, p.y);
+            return;
+        }
+        if (enqueue(MOTION_SETZERO, q1, q2, 0, 0)) report_line("OK SETZERO encolado");
+        return;
+    }
+
     if (!strcmp(cmd, "HOME")) {
+        if (HOMING_MODE != HOMING_SWITCHES) {
+            report_line("ERR HOME no disponible sin finales de carrera: usa SETZERO");
+            return;
+        }
         if (!sv_drivers_enabled()) { report_line("ERR DISABLED (usa ENABLE primero)"); return; }
         sv_clear_fault();
         if (enqueue(MOTION_HOME, 0, 0, 0, 0)) report_line("OK HOME encolado");
@@ -217,6 +250,10 @@ static void handle_line(char *line)
     if (!strcmp(cmd, "TEST")) {
         const int32_t pasos  = a1 ? atol(a1) : (int32_t)(10.0f * STEPS_PER_DEG);
         const int32_t ciclos = a2 ? atol(a2) : 10;
+        if (HOMING_MODE != HOMING_SWITCHES) {
+            report_line("ERR TEST necesita finales de carrera para medir la deriva");
+            return;
+        }
         if (!sv_is_homed()) { report_line("ERR NOT_HOMED (TEST necesita HOME previo)"); return; }
         if (enqueue(MOTION_TEST, (float)pasos, 0, 0, ciclos))
             report_line("OK TEST encolado");

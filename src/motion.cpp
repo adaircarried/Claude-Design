@@ -324,6 +324,12 @@ static bool wait_motion_done(uint32_t timeout_ms)
 
 static void run_test(int32_t amplitude_steps, int32_t cycles)
 {
+    if (HOMING_MODE != HOMING_SWITCHES) {
+        /* La medicion se hace re-referenciando contra el final de carrera:
+         * sin switches no hay referencia absoluta con que comparar. */
+        report_line("ERR TEST necesita finales de carrera (HOMING_MODE = HOMING_SWITCHES)");
+        return;
+    }
     if (!sv_is_homed()) { report_line("ERR NOT_HOMED (TEST requiere HOME previo)"); return; }
     if (amplitude_steps <= 0) amplitude_steps = (int32_t)(10.0f * STEPS_PER_DEG);
     if (cycles <= 0) cycles = 10;
@@ -380,9 +386,35 @@ static void run_test(int32_t amplitude_steps, int32_t cycles)
  * ===========================================================================*/
 static void dispatch(const Setpoint_t *sp)
 {
+    /* CON UN FALLO PENDIENTE solo se aceptan JOG y SETZERO.
+     * Es la practica de los robots industriales: tras salirse de un limite se
+     * puede mover el eje a mano para regresar (JOG ya rechaza un destino
+     * fuera de rango), o rehacer el cero si el fallo vino de un cero mal
+     * hecho. Cualquier otro movimiento espera a un CLEAR explicito. */
+    if (sv_get_fault() != FAULT_NONE &&
+        sp->type != MOTION_JOG && sp->type != MOTION_SETZERO && sp->type != MOTION_STOP) {
+        report_printf("ERR FALLO_ACTIVO %s: solo JOG o SETZERO hasta que escribas CLEAR\n",
+                      sv_fault_name(sv_get_fault()));
+        return;
+    }
+
     switch (sp->type) {
 
+    case MOTION_SETZERO:
+        /* Llega por la cola, asi que TaskMotion esta en EXEC_IDLE: ningun eje
+         * se esta moviendo mientras se redefine su posicion. */
+        g_a1->setCurrentPosition(kin_deg_to_steps(sp->target_a));
+        g_a2->setCurrentPosition(kin_deg_to_steps(sp->target_b));
+        sv_set_homed(true);
+        if (sv_get_fault() == FAULT_NONE) sv_set_state(STATE_IDLE);
+        report_printf("OK SETZERO q1=%.2f q2=%.2f\n", sp->target_a, sp->target_b);
+        break;
+
     case MOTION_HOME: {
+        if (HOMING_MODE != HOMING_SWITCHES) {
+            report_line("ERR HOME no disponible sin finales de carrera: usa SETZERO");
+            break;
+        }
         const HomingResult_t r = homing_all();
         if (r == HOMING_OK) {
             sv_set_homed(true);

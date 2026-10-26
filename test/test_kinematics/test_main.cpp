@@ -249,6 +249,25 @@ static void test_pose_de_home_es_valida(void)
     TEST_ASSERT_EQUAL(IK_OK, kin_point_in_workspace(p.x, p.y));
 }
 
+/* --- La pose de referencia del cero enseñado debe ser usable ------------
+ * SETZERO sin argumentos asigna ZERO_POSE_*. Si esa pose cayera fuera de los
+ * limites o del espacio de trabajo, el supervisor dispararia un fallo en
+ * cuanto se ejecutara. Y debe estar en la rama de codo arriba, que es la
+ * configuracion por defecto, para que un MOVL funcione justo despues. */
+static void test_pose_de_referencia_es_valida(void)
+{
+    TEST_ASSERT_TRUE(kin_joints_in_limits(ZERO_POSE_Q1_DEG, ZERO_POSE_Q2_DEG));
+    const Point_t p = kin_forward(ZERO_POSE_Q1_DEG, ZERO_POSE_Q2_DEG);
+    TEST_ASSERT_EQUAL(IK_OK, kin_point_in_workspace(p.x, p.y));
+    TEST_ASSERT_TRUE(ZERO_POSE_Q2_DEG < 0.0f);           /* codo arriba */
+
+    /* Y la inversa del punto devuelve la misma pose en esa rama */
+    Joints_t j;
+    TEST_ASSERT_EQUAL(IK_OK, kin_inverse(p.x, p.y, ELBOW_UP, &j));
+    TEST_ASSERT_FLOAT_WITHIN(0.05f, ZERO_POSE_Q1_DEG, j.q1);
+    TEST_ASSERT_FLOAT_WITHIN(0.05f, ZERO_POSE_Q2_DEG, j.q2);
+}
+
 int main(int, char **)
 {
     UNITY_BEGIN();
@@ -269,5 +288,6 @@ int main(int, char **)
     RUN_TEST(test_conversion_pasos);
     RUN_TEST(test_limites_articulares);
     RUN_TEST(test_pose_de_home_es_valida);
+    RUN_TEST(test_pose_de_referencia_es_valida);
     return UNITY_END();
 }
