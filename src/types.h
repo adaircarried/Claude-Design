@@ -67,7 +67,57 @@ typedef struct {
     int32_t      aux;         /* uso libre por tipo:
                                  TEST -> numero de ciclos
                                  GRIPPER (P3) -> angulo del servo    */
+    uint8_t      seq;         /* SEQ de la trama que lo pidio (U2); 0 en
+                                 la consola de texto. Viaja con el
+                                 setpoint para que el aviso DONE/FAILED
+                                 diga a que orden corresponde.       */
+    uint8_t      flags;       /* SP_FLAG_*                           */
 } Setpoint_t;
+
+#define SP_FLAG_DIR     0x01  /* JOG en sentido negativo                    */
+#define SP_FLAG_NOTIFY  0x02  /* avisar con DONE cuando termine             */
+
+/* ---------------------------------------------------------------------------
+ * CODIGOS DE ERROR
+ * ---------------------------------------------------------------------------
+ * Son los del protocolo binario (docs/PROTOCOLO_U2.md, seccion 6) y TAMBIEN
+ * los que usa TaskMotion para decir por que no pudo ejecutar un setpoint.
+ * Viven aqui, y no en el modulo del protocolo, para que motion.cpp no tenga
+ * que conocer nada del protocolo: solo publica un codigo.
+ * -------------------------------------------------------------------------*/
+typedef enum {
+    ERR_NONE             = 0x00,
+    ERR_CRC              = 0x01,
+    ERR_TRAMA            = 0x02,
+    ERR_TIMEOUT          = 0x03,
+    ERR_CMD_DESCONOCIDO  = 0x04,
+    ERR_MOTOR_INVALIDO   = 0x05,
+    ERR_LONGITUD         = 0x06,
+    ERR_FUERA_DE_RANGO   = 0x07,
+    ERR_COLA_LLENA       = 0x08,
+    ERR_SIN_CERO         = 0x09,
+    ERR_DRIVERS_APAGADOS = 0x0A,
+    ERR_FALLO_ACTIVO     = 0x0B,
+    ERR_DESBORDE_RX      = 0x0C,
+    ERR_NO_IMPLEMENTADO  = 0x0D,
+    ERR_RAMA_CODO        = 0x0E,
+    ERR_TRAYECTORIA      = 0x0F,
+    ERR_ABORTADO         = 0x10   /* un STOP o un fallo lo interrumpio */
+} ErrCode_t;
+
+/* ---------------------------------------------------------------------------
+ * Aviso de TaskMotion sobre un setpoint que termino o que no pudo ejecutarse.
+ * Viaja por una cola propia (motionEventQueue) hasta TaskComms, que es quien
+ * lo convierte en una trama DONE o FAILED. Asi TaskMotion nunca escribe en el
+ * puerto serial (regla 3 del proyecto).
+ * -------------------------------------------------------------------------*/
+typedef enum { MEV_DONE = 0, MEV_FAILED = 1 } MotionEventKind_t;
+
+typedef struct {
+    uint8_t seq;
+    uint8_t kind;   /* MotionEventKind_t */
+    uint8_t code;   /* ErrCode_t; ERR_NONE si kind = MEV_DONE */
+} MotionEvent_t;
 
 /* ---------------------------------------------------------------------------
  * Estado global del robot. Lo publica TaskSupervisor; lo leen telemetria y
@@ -92,7 +142,8 @@ typedef enum {
     FAULT_WORKSPACE       = 4,  /* efector fuera del anillo util             */
     FAULT_ESTOP           = 5,  /* paro solicitado por el usuario            */
     FAULT_QUEUE_FULL      = 6,
-    FAULT_RX_OVERFLOW     = 7   /* preparado para el Parcial 2               */
+    FAULT_RX_OVERFLOW     = 7,  /* preparado para el Parcial 2               */
+    FAULT_LINK_LOST       = 8   /* el watchdog del enlace paro el robot      */
 } FaultCode_t;
 
 /* Configuracion del codo. Debe mantenerse CONSTANTE a lo largo de una

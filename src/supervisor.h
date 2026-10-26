@@ -64,3 +64,11 @@ bool sv_limit_raw(uint8_t axis);
  * DISABLE, nunca desde STOP. */
 void sv_drivers_enable(bool on);
 bool sv_drivers_enabled(void);
+
+/* --- Acciones de operador -----------------------------------------------
+ * Las usan por igual la consola de texto y el protocolo binario, para que
+ * ENABLE, DISABLE y CLEAR hagan exactamente lo mismo venga la orden de donde
+ * venga. Llamarlas solo desde TaskComms. */
+void sv_cmd_enable(void);
+void sv_cmd_disable(void);   /* frena, espera 300 ms y libera: BLOQUEA */
+void sv_cmd_clear(void);

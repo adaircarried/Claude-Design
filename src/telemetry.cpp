@@ -7,6 +7,27 @@
 
 static SemaphoreHandle_t g_serial_mtx = NULL;
 static volatile bool     g_stream     = false;
+static volatile bool     g_text_muted = false;
+
+/* ---------------------------------------------------------------------------
+ * MODO BINARIO: TEXTO SILENCIADO
+ * En modo binario el puerto solo puede llevar tramas. Una linea "EVT ..."
+ * del supervisor colada entre dos tramas obligaria al pendant a descartar
+ * basura en cada lectura. Como TODA la salida de texto del firmware pasa por
+ * report_printf()/report_line(), basta con callarlas aqui: no hay que tocar
+ * ninguna de las llamadas repartidas por el codigo.
+ * -------------------------------------------------------------------------*/
+void telemetry_set_text_muted(bool muted) { g_text_muted = muted; }
+bool telemetry_text_muted(void)           { return g_text_muted; }
+
+bool report_write_frame(const uint8_t *data, size_t len)
+{
+    if (!g_serial_mtx || xSemaphoreTake(g_serial_mtx, pdMS_TO_TICKS(100)) != pdTRUE)
+        return false;
+    Serial.write(data, len);
+    xSemaphoreGive(g_serial_mtx);
+    return true;
+}
 
 void telemetry_init(void)
 {
@@ -51,6 +72,7 @@ static void serial_write_crlf(const char *s)
 
 void report_printf(const char *fmt, ...)
 {
+    if (g_text_muted) return;
     char buf[192];
     va_list ap;
     va_start(ap, fmt);
@@ -65,6 +87,7 @@ void report_printf(const char *fmt, ...)
 
 void report_line(const char *s)
 {
+    if (g_text_muted) return;
     if (g_serial_mtx && xSemaphoreTake(g_serial_mtx, pdMS_TO_TICKS(100)) == pdTRUE) {
         Serial.println(s);
         xSemaphoreGive(g_serial_mtx);
@@ -170,6 +193,7 @@ const char *sv_fault_name(FaultCode_t f)
     case FAULT_ESTOP:          return "PARO_USUARIO";
     case FAULT_QUEUE_FULL:     return "COLA_LLENA";
     case FAULT_RX_OVERFLOW:    return "DESBORDE_RX";
+    case FAULT_LINK_LOST:      return "ENLACE_PERDIDO";
     }
     return "?";
 }

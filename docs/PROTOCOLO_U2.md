@@ -1,7 +1,8 @@
 # Protocolo serial binario — Unidad 2
 
-Especificación del enlace PC ↔ ESP32 del brazo RR. **Borrador para revisión
-(26 oct 2026)**; el código se escribe después de aprobarla.
+Especificación del enlace PC ↔ ESP32 del brazo RR. Aprobada el 26 oct 2026 y
+**actualizada para coincidir con la implementación** (`src/frame.cpp`,
+`src/proto.cpp` y `pc/protocolo.py`).
 
 ---
 
@@ -71,7 +72,7 @@ Tamaño total: `9 + N` bytes. Sin payload, 9 bytes.
 |---|---|---|
 | 0 | `DIR` | Dirección en `JOG`: 0 = positiva, 1 = negativa |
 | 1 | `NOTIFY` | Avisar con `DONE` cuando el movimiento **termine**. Es lo que usa la subrutina para saber que ya soltó la ficha |
-| 2–7 | — | Reservados, deben ir en 0 |
+| 2–7 | — | Reservados: se ignoran. Envíalos en 0 |
 
 ---
 
@@ -83,7 +84,8 @@ Tamaño total: `9 + N` bytes. Sin payload, 9 bytes.
 | `0x02` | `GET_STATUS` | 0 | — | no |
 | `0x03` | `GET_DIAG` | 0 | — | no |
 | `0x04` | `MODE_TEXT` | 0 | — | no |
-| `0x10` | `JOG` | 1 o 2 | `u32 pasos`, `u8 vel%` | sí |
+| `0x05` | `DEBUG_PAUSE` | 0 | `u16 ms` (1–2000) | no — **solo para la demo** |
+| `0x10` | `JOG` | 1 o 2 | `u32 pasos` (1–16 000); dirección en `FLAGS.DIR` | sí |
 | `0x11` | `MOVJ` | 0 | `i32 pasos_J1`, `i32 pasos_J2`, `u8 vel%` (absolutos) | sí |
 | `0x12` | `MOVL` | 0 | `i16 x`, `i16 y` en décimas de mm, `u8 vel%` | sí |
 | `0x13` | `GRIPPER` | 0 | `u8 ángulo`, `u16 espera_ms` | sí — **reservado U3** |
@@ -98,9 +100,19 @@ Tamaño total: `9 + N` bytes. Sin payload, 9 bytes.
   micropasos. La PC convierte con los pasos por vuelta que le dio `PING`
   (16 000 → 44.444 pasos/°).
 - **`JOG`** es el caso literal "conteo de pasos + dirección": magnitud en el
-  payload, signo en `FLAGS.DIR`.
+  payload, signo en `FLAGS.DIR`. Va siempre a la velocidad fija de jog
+  (`JOG_SPEED_HZ`), porque es para acercarse con cuidado. Se acepta aunque
+  haya un fallo pendiente: es la forma de salir de un límite, como en un
+  robot industrial. `SETZERO` también se acepta con fallo, por si el fallo
+  vino de un cero mal hecho.
+- **`DEBUG_PAUSE`** hace que `TaskComms` deje de leer el puerto N ms. Sirve
+  para demostrar el manejo del desborde: sin él, el firmware vacía el puerto
+  cada milisegundo y es casi imposible desbordarlo a propósito. Se rechaza con
+  el robot en movimiento, porque durante la pausa no llegaría un `STOP`.
 - **`STOP` no se encola**, igual que en la U1: llama a `sv_request_abort()`,
-  frena con rampa, mantiene el par y vacía la cola.
+  frena con rampa, mantiene el par y vacía la cola. Deja un fallo
+  `PARO_USUARIO` pendiente: hay que mandar `CLEAR` antes del siguiente `MOVJ`
+  o `MOVL`. Es deliberado, como el reset tras un paro en un robot industrial.
 - **`SETZERO`** sustituye al homing con finales de carrera: "la pose en la que
   estás ahora vale estos pasos". Ver §9.
 - **`GRIPPER`** responde `NACK NO_IMPLEMENTADO` hasta la U3. Se define ya para
@@ -117,7 +129,7 @@ Toda respuesta devuelve el `SEQ` de la orden que contesta.
 |---|---|---|---|
 | `0x81` | `PONG` | a `PING` | `u8 versión`, `u32 baudios`, `u8 bits`, `u8 paridad` (0 N, 1 E, 2 O), `u8 paro`, `u16 pasos_por_vuelta` |
 | `0x82` | `STATUS` | a `GET_STATUS` | `u8 estado`, `u8 fallo`, `u8 banderas`, `u8 en_cola`, `u8 último_seq_terminado`, `i32 pasos_J1`, `i32 pasos_J2`, `i16 x`, `i16 y` (0.1 mm) |
-| `0x83` | `DIAG` | a `GET_DIAG` | contadores `u16`: tramas_ok, err_crc, err_trama, err_timeout, err_desborde, err_rango, err_paridad, latencia_µs_máx, latencia_µs_última |
+| `0x83` | `DIAG` | a `GET_DIAG` | contadores `u16`: tramas_ok, err_crc, err_trama, err_timeout, err_desborde, rechazadas, err_paridad, latencia_µs_máx, latencia_µs_última |
 | `0x90` | `ACK` | orden aceptada | `u8 cmd` |
 | `0x91` | `NACK` | orden rechazada | `u8 cmd`, `u8 código` (§6) |
 | `0x92` | `DONE` | terminó un movimiento con `NOTIFY` | — |
@@ -125,6 +137,14 @@ Toda respuesta devuelve el `SEQ` de la orden que contesta.
 
 `banderas` del `STATUS`: bit 0 = cero fijado, bit 1 = drivers energizados,
 bit 2 = en movimiento.
+
+`rechazadas` del `DIAG` cuenta todas las órdenes que llegaron en una trama
+válida pero se respondieron con `NACK`: motor, longitud, rango, estado del
+robot o cola llena.
+
+**Tiempo de espera del `ACK`:** casi todas las órdenes responden en menos de
+1 ms, pero `DISABLE` frena antes de soltar los motores y tarda unos 300 ms. La
+PC debe esperar al menos 500 ms antes de dar una orden por perdida.
 
 **`ACK` no significa "terminado"**, significa "entró a la cola". Que terminó lo
 dice `DONE`. Y si al ejecutarse resulta imposible (por ejemplo, un `MOVL` cuya
@@ -147,11 +167,12 @@ dice `FAILED`. **Ningún error es silencioso.**
 | `0x08` | `COLA_LLENA` | Ya hay 16 movimientos pendientes |
 | `0x09` | `SIN_CERO` | Movimiento absoluto sin `SETZERO` previo |
 | `0x0A` | `DRIVERS_APAGADOS` | Movimiento con los drivers liberados |
-| `0x0B` | `FALLO_ACTIVO` | Hay un fallo pendiente: primero `CLEAR` |
+| `0x0B` | `FALLO_ACTIVO` | Hay un fallo pendiente: primero `CLEAR` (no aplica a `JOG` ni a `SETZERO`) |
 | `0x0C` | `DESBORDE_RX` | Se llenó el buffer de recepción |
 | `0x0D` | `NO_IMPLEMENTADO` | Comando reservado (`GRIPPER` hasta la U3) |
 | `0x0E` | `RAMA_CODO` | `MOVL` desde la rama del codo contraria |
 | `0x0F` | `TRAYECTORIA` | La recta del `MOVL` sale del espacio de trabajo |
+| `0x10` | `ABORTADO` | Un `STOP`, un fallo o el watchdog interrumpieron el movimiento (llega en `FAILED`) |
 
 Para `CRC`, `TRAMA` y `TIMEOUT` el `SEQ` del `NACK` puede venir corrupto (es
 el que se leyó); la PC lo toma como orientativo.
@@ -184,7 +205,14 @@ trama completa:
   la PC con `pio test -e native`: tramas válidas, CRC corrupto, tramas
   cortadas, ruido aleatorio, tramas pegadas, `0xAA` dentro del payload.
 - **Latencia:** se mide con `micros()` desde que se procesa el `EOF` hasta que
-  el setpoint está en la cola, y se reporta en `DIAG`.
+  la respuesta está lista (en un movimiento, el setpoint ya está en la cola),
+  y se reporta en `DIAG`. Hay que sumarle hasta 1 ms de espera del tick de
+  `TaskComms`.
+- **Limitación honesta:** el formato es por longitud (`LEN`), sin relleno de
+  bytes. Si se pierde un byte a media trama, el parser puede tomar parte de
+  la siguiente como continuación de la rota. Se recupera solo: esa trama
+  falla por CRC o por `EOF`, y el timeout de 20 ms vuelve a sincronizar. En
+  la práctica cuesta una orden repetida, nunca una orden falsa ejecutada.
 
 ---
 
@@ -195,11 +223,11 @@ trama completa:
 | Byte alterado | Paridad (hardware) y CRC | `NACK CRC`, trama descartada | `err_paridad`, `err_crc` |
 | Trama incompleta | Timeout de 20 ms entre bytes | `NACK TIMEOUT`, resincroniza | `err_timeout` |
 | Trama mal formada | `LEN` > 32 o falta `EOF` | `NACK TRAMA`, resincroniza | `err_trama` |
-| Ráfaga de datos | Buffer circular lleno | Se descarta el buffer, `NACK DESBORDE_RX` | `err_desborde` |
-| Orden absurda | Validación de motor, longitud, límites, IK, velocidad | `NACK` con su código; **no se encola** | `err_rango` |
-| Cola llena | `xQueueSend` falla | `NACK COLA_LLENA` | — |
+| Ráfaga de datos | Buffer circular lleno, o buffer del driver lleno (callback del UART) | Se descarta el buffer, se reinicia el parser, `NACK DESBORDE_RX`. **No** se fija un fallo del robot: es un problema del enlace | `err_desborde` |
+| Orden absurda | Validación de motor, longitud, límites, IK, velocidad | `NACK` con su código; **no se encola** | `rechazadas` |
+| Cola llena | `xQueueSend` falla | `NACK COLA_LLENA` | `rechazadas` |
 | Falla al ejecutar | `TaskMotion` | `FAILED` con código | — |
-| **Pérdida de enlace** | Sin trama válida durante 1 s con el robot en movimiento | **`STOP`** automático con rampa | — |
+| **Pérdida de enlace** | Sin trama válida durante 1 s con el robot en movimiento | **`STOP`** automático con rampa; fallo `ENLACE_PERDIDO`; el movimiento en curso responde `FAILED ABORTADO` | — |
 
 El pendant pide `GET_STATUS` 5 veces por segundo para refrescar la pantalla, y
 eso mismo sirve de latido para el watchdog. Si cierras el pendant a media
@@ -227,7 +255,21 @@ Con `HOMING_MODE` = sin finales, el supervisor deja de vigilar los GPIO 16 y
 
 ---
 
-## 10. Modos texto y binario
+## 10. Notas para el programa de la PC
+
+- **El ESP32 se reinicia al abrir el puerto.** Al abrir el COM, Windows mueve
+  las líneas DTR y RTS, y el circuito de arranque automático de la placa
+  reinicia el ESP32: **se perdería el cero**. El pendant abre el puerto con
+  `dtr = False` y `rts = False` para evitarlo.
+- **Texto antes de las tramas.** Tras un reinicio el firmware imprime su
+  banner en modo texto. El parser de la PC ignora todo hasta el primer `SOF`.
+- El pendant pide `GET_STATUS` 5 veces por segundo: refresca la pantalla y
+  sirve de latido para el watchdog. Una subrutina que espera un `DONE` debe
+  seguir pidiendo `GET_STATUS` mientras espera.
+
+---
+
+## 11. Modos texto y binario
 
 - El firmware arranca en **modo texto** (la consola de la U1, útil en banco).
 - La **primera trama binaria válida** lo pasa a **modo binario**: se apagan el
@@ -236,7 +278,7 @@ Con `HOMING_MODE` = sin finales, el supervisor deja de vigilar los GPIO 16 y
 
 ---
 
-## 11. Ejemplo: tomar una ficha
+## 12. Ejemplo: tomar una ficha
 
 Subrutina en la PC. Cada línea es una trama; el robot las ejecuta en orden
 desde su cola.

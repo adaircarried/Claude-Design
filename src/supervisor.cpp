@@ -42,6 +42,35 @@ void sv_drivers_enable(bool on)
     digitalWrite(PIN_ENABLE, on ? ENABLE_ACTIVE_LEVEL : !ENABLE_ACTIVE_LEVEL);
 }
 
+void sv_cmd_enable(void)
+{
+    sv_drivers_enable(true);
+    if (g_state == STATE_DISABLED) g_state = g_homed ? STATE_IDLE : STATE_UNHOMED;
+}
+
+void sv_cmd_disable(void)
+{
+    /* Liberar los drivers en un brazo vertical significa que el brazo cae.
+     * Se frena primero, y se marca como no referenciado: tras caer, la
+     * posicion guardada es mentira. */
+    sv_request_abort(FAULT_NONE);
+    vTaskDelay(pdMS_TO_TICKS(300));
+    sv_drivers_enable(false);
+    g_homed = false;
+    g_state = STATE_DISABLED;
+}
+
+void sv_cmd_clear(void)
+{
+    /* No se toca la bandera de aborto: si un STOP acaba de llegar y TaskMotion
+     * aun no lo ha atendido, un CLEAR inmediato lo cancelaria. TaskMotion la
+     * limpia sola al atenderla. Tampoco se pisa el estado si el robot se esta
+     * moviendo (un JOG de recuperacion) o tiene los drivers libres. */
+    g_fault = FAULT_NONE;
+    if (g_state == STATE_FAULT || g_state == STATE_STOPPED)
+        g_state = g_homed ? STATE_IDLE : STATE_UNHOMED;
+}
+
 /* ---------------------------------------------------------------------------
  * Lectura de finales de carrera.
  * sv_limit_raw()       -> una lectura cruda

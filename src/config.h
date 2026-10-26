@@ -225,7 +225,11 @@
                                            por que TaskMotion hace polling y no
                                            bloqueo puro en la cola */
 
-#define SETPOINT_QUEUE_LEN      8
+#define SETPOINT_QUEUE_LEN      16      /* una subrutina de la U3 (tomar ficha
+                                           y colocarla) son unos 11 setpoints:
+                                           caben enteros y la PC no tiene que
+                                           esperar entre uno y otro */
+#define MOTION_EVENT_QUEUE_LEN  16      /* avisos DONE / FAILED de TaskMotion */
 
 /* ===========================================================================
  * 8. COMUNICACION
@@ -246,9 +250,50 @@
  * ven". Durante la puesta a punto del Parcial 1, donde todos los comandos se
  * escriben a mano, esa diferencia importa.
  *
- * PARCIAL 2: poner a 0. Un parser binario no debe devolver nada que no sea
- * una respuesta del protocolo; el eco corromperia las tramas del enlace. */
+ * Con el protocolo binario de la U2 el eco NO molesta: solo existe en modo
+ * texto. En cuanto llega la primera trama binaria valida se silencia todo el
+ * texto, eco incluido (ver report_printf en telemetry.cpp). */
 #define CONSOLE_ECHO            1
+
+/* --- Bus ------------------------------------------------------------------
+ * 115200 baudios, 8 bits, paridad PAR, 1 bit de paro (8E1). La paridad da una
+ * deteccion por hardware de un bit alterado en cada byte, antes incluso del
+ * CRC. El monitor de PlatformIO usa monitor_parity = E y el pendant de Python
+ * parity='E'. Ver docs/PROTOCOLO_U2.md, seccion 2. */
+#define SERIAL_DATA_BITS        8
+#define SERIAL_PARITY_EVEN      1       /* 0 = sin paridad, 1 = par */
+#define SERIAL_STOP_BITS        1
+#define SERIAL_RX_DRIVER_BUF    1024    /* buffer interno del driver del UART,
+                                           que llena la interrupcion. El de
+                                           fabrica (256 B) se queda corto ante
+                                           una rafaga mientras TaskComms duerme */
+#define COMMS_TICK_MS           1       /* TaskComms vacia el UART cada 1 ms */
+
+/* --- Trama (docs/PROTOCOLO_U2.md, seccion 3) ------------------------------- */
+#define PROTO_VERSION           1
+#define FRAME_SOF               0xAA    /* no es ASCII: no se confunde con texto */
+#define FRAME_EOF               0x55
+#define FRAME_MAX_PAYLOAD       32
+#define FRAME_OVERHEAD          9       /* SOF LEN SEQ CMD MOTOR FLAGS CRC CRC EOF */
+#define FRAME_MAX_SIZE          (FRAME_OVERHEAD + FRAME_MAX_PAYLOAD)
+#define FRAME_INTERBYTE_MS      20      /* a 115200 un byte tarda 95 us: 20 ms
+                                           sin bytes a media trama significa
+                                           que esa trama ya no va a terminar */
+
+/* --- Errores del enlace ---------------------------------------------------- */
+#define LINK_TIMEOUT_MS         1000    /* watchdog: sin trama valida en este
+                                           tiempo, con el robot moviendose,
+                                           se para. El pendant pide STATUS
+                                           5 veces por segundo y eso hace de
+                                           latido. */
+#define JOG_MAX_STEPS           16000   /* un JOG binario no puede pedir mas de
+                                           una vuelta de articulacion */
+
+/* Contar errores de paridad con el callback del UART. Si tu version del core
+ * de Arduino-ESP32 no tuviera Serial.onReceiveError(), pon esto a 0: la
+ * integridad no cambia (el CRC sigue rechazando el byte), solo se pierde el
+ * contador. */
+#define PROTO_COUNT_PARITY_ERRORS 1
 
 /* ===========================================================================
  * 9. SEGURIDAD

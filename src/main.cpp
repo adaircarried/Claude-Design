@@ -39,6 +39,7 @@
 #include "telemetry.h"
 #include "persistence.h"
 #include "kinematics.h"
+#include "proto.h"
 
 static void print_banner(void)
 {
@@ -73,13 +74,18 @@ static void print_banner(void)
         report_line("   3) SETZERO    esa pose pasa a ser la referencia");
     }
     report_line("   despues ya puedes usar MOVJ / MOVL. JOG funciona sin referencia.");
+    report_line(" Protocolo binario U2: 115200 8E1. La primera trama valida");
+    report_line(" apaga este texto; MODE_TEXT o un reinicio lo regresan.");
     report_line(" HELP para la lista completa de comandos.");
     report_line("=====================================================");
 }
 
 void setup(void)
 {
-    Serial.begin(SERIAL_BAUD);
+    /* Bus de la U2: 115200 8E1. El buffer del driver se agranda ANTES de
+     * begin(), que es cuando se reserva. */
+    Serial.setRxBufferSize(SERIAL_RX_DRIVER_BUF);
+    Serial.begin(SERIAL_BAUD, SERIAL_PARITY_EVEN ? SERIAL_8E1 : SERIAL_8N1);
     delay(300);                 /* deja que el monitor serial se enganche */
 
     telemetry_init();           /* crea el mutex del serial: PRIMERO, porque
@@ -90,11 +96,13 @@ void setup(void)
 
     /* La cola se crea ANTES que las tareas: TaskComms podria intentar
      * encolar en su primer tick. */
-    setpointQueue = xQueueCreate(SETPOINT_QUEUE_LEN, sizeof(Setpoint_t));
-    if (!setpointQueue) {
-        report_line("ERR FATAL: no se pudo crear setpointQueue");
+    setpointQueue    = xQueueCreate(SETPOINT_QUEUE_LEN, sizeof(Setpoint_t));
+    motionEventQueue = xQueueCreate(MOTION_EVENT_QUEUE_LEN, sizeof(MotionEvent_t));
+    if (!setpointQueue || !motionEventQueue) {
+        report_line("ERR FATAL: no se pudieron crear las colas");
         for (;;) delay(1000);
     }
+    proto_init();
 
     motion_init();
 

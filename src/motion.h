@@ -24,6 +24,10 @@
 /* La cola. Se crea en main.cpp; la declaran aqui los dos extremos. */
 extern QueueHandle_t setpointQueue;
 
+/* Avisos DONE / FAILED (MotionEvent_t) de TaskMotion hacia TaskComms.
+ * Se crea en main.cpp. */
+extern QueueHandle_t motionEventQueue;
+
 void motion_init(void);
 void TaskMotion(void *pv);
 

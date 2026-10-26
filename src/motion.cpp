@@ -22,7 +22,8 @@ static FastAccelStepperEngine engine = FastAccelStepperEngine();
 static FastAccelStepper *g_a1 = NULL;
 static FastAccelStepper *g_a2 = NULL;
 
-QueueHandle_t setpointQueue = NULL;
+QueueHandle_t setpointQueue    = NULL;
+QueueHandle_t motionEventQueue = NULL;
 
 static uint16_t      g_speed_pct = 50;
 static ElbowConfig_t g_elbow     = ELBOW_UP;
@@ -36,6 +37,43 @@ typedef enum {
 } ExecState_t;
 
 static ExecState_t g_exec = EXEC_IDLE;
+
+/* ---------------------------------------------------------------------------
+ * AVISOS DE RESULTADO (U2)
+ * ---------------------------------------------------------------------------
+ * Para que una subrutina en la PC sepa que el robot "ya solto la ficha",
+ * TaskMotion avisa cuando un setpoint termina (DONE, solo si lo pidio con
+ * SP_FLAG_NOTIFY) o cuando no pudo ejecutarse (FAILED, SIEMPRE: ningun error
+ * es silencioso). Los avisos van a motionEventQueue; TaskComms los recoge y
+ * los convierte en tramas. TaskMotion nunca escribe en el puerto.
+ *
+ * g_cur guarda el setpoint en curso, para saber a que SEQ corresponde el aviso
+ * cuando el movimiento termina varios ticks despues de empezar.
+ * -------------------------------------------------------------------------*/
+static Setpoint_t g_cur;
+static bool       g_cur_active = false;
+
+static void post_event(uint8_t seq, MotionEventKind_t kind, ErrCode_t code)
+{
+    if (!motionEventQueue) return;
+    MotionEvent_t ev = { seq, (uint8_t)kind, (uint8_t)code };
+    /* Sin espera: si la cola estuviera llena se pierde el aviso, pero el
+     * estado sigue visible en STATUS. TaskMotion no puede bloquearse aqui. */
+    xQueueSend(motionEventQueue, &ev, 0);
+}
+
+static void sp_done(void)
+{
+    if (g_cur_active && (g_cur.flags & SP_FLAG_NOTIFY))
+        post_event(g_cur.seq, MEV_DONE, ERR_NONE);
+    g_cur_active = false;
+}
+
+static void sp_fail(ErrCode_t code)
+{
+    if (g_cur_active) post_event(g_cur.seq, MEV_FAILED, code);
+    g_cur_active = false;
+}
 
 /* Estado del interpolador lineal (MOVL) */
 static Point_t  g_line_a, g_line_b;
@@ -101,7 +139,7 @@ static uint32_t scale_speed(uint32_t base_hz, uint16_t pct)
  * La trayectoria del efector NO es una recta, y eso es correcto: es
  * precisamente lo que distingue MOVJ de MOVL.
  * -------------------------------------------------------------------------*/
-static void start_movj_steps(int32_t t1, int32_t t2, uint16_t pct)
+static bool start_movj_steps(int32_t t1, int32_t t2, uint16_t pct)
 {
     const int32_t c1 = g_a1->getCurrentPosition();
     const int32_t c2 = g_a2->getCurrentPosition();
@@ -110,7 +148,7 @@ static void start_movj_steps(int32_t t1, int32_t t2, uint16_t pct)
     const int32_t d2 = labs(t2 - c2);
     const int32_t dm = (d1 > d2) ? d1 : d2;
 
-    if (dm == 0) { g_exec = EXEC_IDLE; return; }
+    if (dm == 0) { g_exec = EXEC_IDLE; return false; }   /* ya estaba ahi */
 
     const uint32_t vmax = scale_speed(AXIS_MAX_SPEED_HZ, pct);
     const uint32_t amax = AXIS_MAX_ACCEL;
@@ -130,6 +168,7 @@ static void start_movj_steps(int32_t t1, int32_t t2, uint16_t pct)
 
     g_exec = EXEC_POINT;
     sv_set_state(STATE_MOVING);
+    return true;
 }
 
 /* ===========================================================================
@@ -208,6 +247,7 @@ static void line_tick(void)
     else if (!g_a1->isRunning() && !g_a2->isRunning()) {
         g_exec = EXEC_IDLE;
         sv_set_state(STATE_IDLE);
+        sp_done();
     }
 }
 
@@ -232,6 +272,7 @@ static bool start_movl(float x, float y, uint16_t pct)
                       codo_arriba_ahora ? "ARRIBA" : "ABAJO", q2,
                       g_elbow == ELBOW_UP ? "UP" : "DOWN",
                       g_elbow == ELBOW_UP ? "arriba (q2<0)" : "abajo (q2>0)");
+        sp_fail(ERR_RAMA_CODO);
         return false;
     }
 
@@ -249,6 +290,7 @@ static bool start_movl(float x, float y, uint16_t pct)
     if (v != IK_OK) {
         report_printf("ERR MOVL_PATH codigo=%d punto=(%.1f,%.1f)\n",
                       (int)v, fail.x, fail.y);
+        sp_fail(ERR_TRAYECTORIA);
         return false;
     }
 
@@ -258,6 +300,7 @@ static bool start_movl(float x, float y, uint16_t pct)
 
     if (g_line_len < 0.5f) {       /* ya estamos ahi */
         report_line("OK MOVL (sin desplazamiento)");
+        sp_done();
         return true;
     }
 
@@ -391,10 +434,14 @@ static void dispatch(const Setpoint_t *sp)
      * puede mover el eje a mano para regresar (JOG ya rechaza un destino
      * fuera de rango), o rehacer el cero si el fallo vino de un cero mal
      * hecho. Cualquier otro movimiento espera a un CLEAR explicito. */
+    g_cur        = *sp;
+    g_cur_active = true;
+
     if (sv_get_fault() != FAULT_NONE &&
         sp->type != MOTION_JOG && sp->type != MOTION_SETZERO && sp->type != MOTION_STOP) {
         report_printf("ERR FALLO_ACTIVO %s: solo JOG o SETZERO hasta que escribas CLEAR\n",
                       sv_fault_name(sv_get_fault()));
+        sp_fail(ERR_FALLO_ACTIVO);
         return;
     }
 
@@ -408,11 +455,13 @@ static void dispatch(const Setpoint_t *sp)
         sv_set_homed(true);
         if (sv_get_fault() == FAULT_NONE) sv_set_state(STATE_IDLE);
         report_printf("OK SETZERO q1=%.2f q2=%.2f\n", sp->target_a, sp->target_b);
+        sp_done();
         break;
 
     case MOTION_HOME: {
         if (HOMING_MODE != HOMING_SWITCHES) {
             report_line("ERR HOME no disponible sin finales de carrera: usa SETZERO");
+            sp_fail(ERR_NO_IMPLEMENTADO);
             break;
         }
         const HomingResult_t r = homing_all();
@@ -423,10 +472,12 @@ static void dispatch(const Setpoint_t *sp)
             persist_save_home(s1, s2);
             report_printf("OK HOME q1=%.2f q2=%.2f\n",
                           kin_steps_to_deg(s1), kin_steps_to_deg(s2));
+            sp_done();
         } else {
             sv_set_homed(false);
             sv_set_fault(FAULT_HOMING_TIMEOUT);
             report_printf("ERR HOME %s\n", homing_result_name(r));
+            sp_fail(ERR_ABORTADO);
         }
         g_exec = EXEC_IDLE;
         break;
@@ -436,7 +487,7 @@ static void dispatch(const Setpoint_t *sp)
         /* JOG es relativo y siempre lento: es el modo de enseñar posiciones
          * a mano, donde importa el control fino, no la velocidad. */
         FastAccelStepper *st = motion_stepper(sp->axis_id);
-        if (!st) { report_line("ERR AXIS"); break; }
+        if (!st) { report_line("ERR AXIS"); sp_fail(ERR_MOTOR_INVALIDO); break; }
 
         const float cur    = kin_steps_to_deg(st->getCurrentPosition());
         const float target = cur + sp->target_a;
@@ -445,6 +496,7 @@ static void dispatch(const Setpoint_t *sp)
 
         if (sv_is_homed() && (target < lo || target > hi)) {
             report_printf("ERR JOG_LIMIT destino=%.2f rango=[%.1f,%.1f]\n", target, lo, hi);
+            sp_fail(ERR_FUERA_DE_RANGO);
             break;
         }
         st->setSpeedInHz(JOG_SPEED_HZ);
@@ -456,28 +508,32 @@ static void dispatch(const Setpoint_t *sp)
     }
 
     case MOTION_MOVJ: {
-        if (!sv_is_homed()) { report_line("ERR NOT_HOMED"); break; }
+        if (!sv_is_homed()) { report_line("ERR NOT_HOMED"); sp_fail(ERR_SIN_CERO); break; }
         if (!kin_joints_in_limits(sp->target_a, sp->target_b)) {
             report_printf("ERR JOINT_LIMIT q1=%.2f q2=%.2f\n", sp->target_a, sp->target_b);
+            sp_fail(ERR_FUERA_DE_RANGO);
             break;
         }
         const Point_t p = kin_forward(sp->target_a, sp->target_b);
         if (kin_point_in_workspace(p.x, p.y) != IK_OK) {
             report_printf("ERR WORKSPACE destino=(%.1f,%.1f)\n", p.x, p.y);
+            sp_fail(ERR_FUERA_DE_RANGO);
             break;
         }
-        start_movj_steps(kin_deg_to_steps(sp->target_a),
-                         kin_deg_to_steps(sp->target_b), sp->speed_pct);
+        if (!start_movj_steps(kin_deg_to_steps(sp->target_a),
+                              kin_deg_to_steps(sp->target_b), sp->speed_pct))
+            sp_done();                       /* ya estaba en el destino */
         break;
     }
 
     case MOTION_MOVL:
-        if (!sv_is_homed()) { report_line("ERR NOT_HOMED"); break; }
+        if (!sv_is_homed()) { report_line("ERR NOT_HOMED"); sp_fail(ERR_SIN_CERO); break; }
         start_movl(sp->target_a, sp->target_b, sp->speed_pct);
         break;
 
     case MOTION_TEST:
         run_test((int32_t)sp->target_a, sp->aux);
+        g_cur_active = false;                /* TEST es solo de la consola */
         break;
 
     case MOTION_STOP:
@@ -485,14 +541,17 @@ static void dispatch(const Setpoint_t *sp)
          * sv_request_abort() y no por la cola (ver types.h). Se atiende aqui
          * tambien por si algun productor futuro lo encola. */
         sv_request_abort(FAULT_NONE);
+        g_cur_active = false;
         break;
 
     case MOTION_GRIPPER:
         report_line("ERR NOT_IMPLEMENTED (pinza: Parcial 3)");
+        sp_fail(ERR_NO_IMPLEMENTADO);
         break;
 
     default:
         report_line("ERR UNKNOWN_MOTION_TYPE");
+        sp_fail(ERR_CMD_DESCONOCIDO);
         break;
     }
 }
@@ -539,6 +598,7 @@ void TaskMotion(void *pv)
             if (!g_a1->isRunning() && !g_a2->isRunning()) {
                 g_exec = EXEC_IDLE;
                 if (sv_get_state() == STATE_MOVING) sv_set_state(STATE_IDLE);
+                sp_done();
             }
             break;
 
@@ -549,6 +609,10 @@ void TaskMotion(void *pv)
         case EXEC_STOPPING:
             if (!g_a1->isRunning() && !g_a2->isRunning()) {
                 g_exec = EXEC_IDLE;
+                /* Si habia un setpoint en curso, se le avisa a la PC que no
+                 * llego a su destino: una subrutina que esperaba su DONE no
+                 * se queda colgada para siempre. */
+                sp_fail(ERR_ABORTADO);
                 /* Distinguir una parada normal de una por fallo importa: la
                  * primera deja el robot listo para seguir, la segunda exige
                  * un CLEAR explicito del usuario. Antes ambas reportaban

@@ -6,6 +6,7 @@
 #include "supervisor.h"
 #include "telemetry.h"
 #include "persistence.h"
+#include "proto.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -66,7 +67,8 @@ static_assert((RX_RING_SIZE & (RX_RING_SIZE - 1)) == 0,
  * -------------------------------------------------------------------------*/
 static bool enqueue(MotionType_t t, float a, float b, uint8_t axis, int32_t aux)
 {
-    Setpoint_t sp;
+    Setpoint_t sp = {};                 /* seq = 0 y flags = 0: la consola no
+                                           pide avisos DONE */
     sp.type      = t;
     sp.target_a  = a;
     sp.target_b  = b;
@@ -75,10 +77,10 @@ static bool enqueue(MotionType_t t, float a, float b, uint8_t axis, int32_t aux)
     sp.aux       = aux;
 
     /* Timeout 0: no bloquear TaskComms esperando sitio. Si la cola esta
-     * llena, el sistema ya tiene 8 movimientos pendientes y lo correcto es
-     * rechazar y avisar, no acumular retraso. */
+     * llena, lo correcto es rechazar y avisar, no acumular retraso. Ya no se
+     * fija un fallo del robot: una cola llena significa "espera", no "algo
+     * salio mal", y un fallo bloquearia los movimientos hasta un CLEAR. */
     if (xQueueSend(setpointQueue, &sp, 0) != pdTRUE) {
-        sv_set_fault(FAULT_QUEUE_FULL);
         report_line("ERR QUEUE_FULL");
         return false;
     }
@@ -280,30 +282,19 @@ static void handle_line(char *line)
     }
 
     if (!strcmp(cmd, "ENABLE")) {
-        sv_drivers_enable(true);
-        if (sv_get_state() == STATE_DISABLED)
-            sv_set_state(sv_is_homed() ? STATE_IDLE : STATE_UNHOMED);
+        sv_cmd_enable();
         report_line("OK ENABLE");
         return;
     }
 
     if (!strcmp(cmd, "DISABLE")) {
-        /* Liberar los drivers en un brazo vertical significa que el brazo
-         * cae. Se para primero y se avisa sin ambiguedad. Ademas se marca
-         * como no referenciado: tras caer, la posicion guardada es mentira. */
-        sv_request_abort(FAULT_NONE);
-        vTaskDelay(pdMS_TO_TICKS(300));
-        sv_drivers_enable(false);
-        sv_set_homed(false);
-        sv_set_state(STATE_DISABLED);
+        sv_cmd_disable();
         report_line("OK DISABLE - AVISO: el brazo cae por gravedad, se pierde la referencia");
         return;
     }
 
     if (!strcmp(cmd, "CLEAR")) {
-        sv_clear_fault();
-        sv_clear_abort();
-        sv_set_state(sv_is_homed() ? STATE_IDLE : STATE_UNHOMED);
+        sv_cmd_clear();
         report_line("OK CLEAR");
         return;
     }
@@ -348,9 +339,10 @@ void comms_init(void)
  * rafaga de comunicacion NUNCA debe introducir jitter en el movimiento, que
  * vive entero en el nucleo 1.
  *
- * El tick de 5 ms mantiene la latencia percibida muy por debajo del umbral
- * humano y, a 115200 baudios, garantiza que el FIFO de 128 bytes del UART no
- * llegue a llenarse (5 ms a esa velocidad son 57 bytes).
+ * Tick de 1 ms (U2): la latencia entre que llega el ultimo byte de una trama
+ * y que su setpoint entra en la cola queda por debajo de 1 ms mas el tiempo
+ * de proceso, que DIAG reporta en microsegundos. A 115200 baudios en 1 ms
+ * llegan unos 10 bytes, muy lejos de llenar los buffers.
  * -------------------------------------------------------------------------*/
 void TaskComms(void *pv)
 {
@@ -365,16 +357,26 @@ void TaskComms(void *pv)
         }
 
         if (g_rx.overflow) {
+            /* Se perdieron bytes: lo que haya en el anillo ya no es fiable.
+             * Se descarta, se reinicia el parser binario y se avisa. No se
+             * fija un fallo del robot: es un problema del enlace, y el
+             * firmware simplemente se resincroniza con la siguiente trama. */
             g_rx.overflow = false;
-            g_rx.head = g_rx.tail = 0;        /* descartar todo: hay datos rotos */
+            g_rx.head = g_rx.tail = 0;
             idx = 0;
-            sv_set_fault(FAULT_RX_OVERFLOW);
+            proto_note_overflow();
             report_line("ERR RX_OVERFLOW");
         }
 
-        /* 2) anillo -> lineas */
+        /* 2) anillo -> protocolo binario o consola de texto.
+         * Un mismo puerto, dos clientes: los bytes de una trama binaria (que
+         * empieza con 0xAA, que no es ASCII) van al parser binario; el resto
+         * forma lineas de texto. En modo binario todo va al parser. */
+        const uint32_t now = millis();
         uint8_t b;
         while (ring_get(&g_rx, &b)) {
+            if (proto_wants_byte(b, idx == 0)) { proto_feed(b, now); continue; }
+
             if (b == '\n' || b == '\r') {
                 /* Con terminales que envian CR+LF, el segundo caracter llega
                  * con idx ya a cero y se ignora solo: no hay doble proceso. */
@@ -403,6 +405,9 @@ void TaskComms(void *pv)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(5));
+        /* 3) timeouts de trama, watchdog del enlace y avisos DONE/FAILED */
+        proto_tick(millis());
+
+        vTaskDelay(pdMS_TO_TICKS(COMMS_TICK_MS));
     }
 }

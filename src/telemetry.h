@@ -24,9 +24,19 @@
 void telemetry_init(void);
 void TaskTelemetry(void *pv);
 
-/* Salida serial protegida por mutex. Seguras desde cualquier tarea. */
+/* Salida serial protegida por mutex. Seguras desde cualquier tarea.
+ * En modo binario no escriben nada (ver telemetry_set_text_muted). */
 void report_printf(const char *fmt, ...);
 void report_line(const char *s);
+
+/* Escribe una trama binaria ya construida, bajo el mismo mutex que el texto.
+ * Devuelve false si no consiguio el puerto en 100 ms. */
+bool report_write_frame(const uint8_t *data, size_t len);
+
+/* Modo binario: silencia TODA la salida de texto (eventos, errores, eco,
+ * telemetria TLM) para que por el puerto solo viajen tramas. */
+void telemetry_set_text_muted(bool muted);
+bool telemetry_text_muted(void);
 
 /* Reporte completo de una sola vez (comando STATUS). */
 void telemetry_status_report(void);
