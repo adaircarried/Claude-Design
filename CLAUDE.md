@@ -14,10 +14,13 @@ universitario de Control de Robots, con tres parciales evaluados.
 - **Este firmware (steppers + TB6600)** — es la linea principal desde octubre
   2026. Compila y arranca en hardware real; consola y finales de carrera
   probados en banco. **Todavia no ha movido un motor.**
-- **Parcial 2** (ultima semana de oct 2026) — protocolo serial binario con
-  CRC. Reescribe `comms.cpp`. El buffer circular ya esta en `comms.cpp`.
-  Al pasar a binario: `CONSOLE_ECHO` a 0 en `config.h` (el eco corromperia
-  las tramas); el eco del monitor se puede dar con `monitor_echo = yes`.
+- **Parcial 2** (entrega 30 oct 2026) — **implementado el 26 oct.**
+  Firmware: `crc16`, `frame` (puros, con tests nativos) y `proto.cpp` dentro
+  de TaskComms; la consola de texto sigue disponible (modo dual). PC:
+  `pc/protocolo.py`, `pc/robot.py`, `pc/pendant.py`. Verificado de extremo a
+  extremo compilando el firmware real contra un simulador del hardware
+  (35 casos) y manejando el pendant en una pantalla virtual. **Aun no se ha
+  probado en el ESP32 real**: los steppers todavia no han girado.
 - **Parcial 3** (30 nov 2026) — vision, pinza SG90, logica de juego. Reutiliza
   `kinematics.cpp`. La API de poses en NVS ya esta en `persistence.h`;
   `MOTION_GRIPPER` ya esta en el enum.
@@ -71,14 +74,24 @@ en la rama configurada (si no, `ERR MOVL_RAMA`: hacer un `MOVJ` antes).
 7. **Ninguna constante fuera de `config.h`.** Ni un número mágico.
 8. **`STOP` mantiene el par de retención.** El brazo es vertical: soltarlo lo
    deja caer. Solo `DISABLE` libera, y avisa.
+9. **`frame.cpp` y `crc16.cpp` no incluyen `<Arduino.h>`**, igual que
+   `kinematics.cpp`: se prueban en la PC con los mismos vectores que Python.
+10. **La PC nunca reintenta sola una orden de movimiento.** Si se perdiera el
+    ACK pero la orden se hubiera ejecutado, el robot se moveria dos veces.
+11. **TaskMotion no escribe en el puerto**: sus avisos DONE/FAILED van por
+    `motionEventQueue` y TaskComms los convierte en tramas.
 
 ## Comandos
 
 ```bash
-pio run                  # compilar
+pio run                  # compilar el firmware (entorno esp32dev)
 pio run -t upload        # flashear
-pio device monitor       # consola, 115200
-pio test -e native       # tests de cinemática, sin hardware
+pio device monitor       # consola, 115200 8E1
+pio test -e native       # tests de cinematica y de trama, sin hardware
+pio run -e bench_motor -t upload   # prueba de banco del cableado
+
+cd pc && python pendant.py                  # teach pendant
+cd pc && python -m unittest test_protocolo  # tests del lado de la PC
 ```
 
 ## Hardware
@@ -87,6 +100,12 @@ ESP32 DevKit V1 · 2 × NEMA 17 con reductor 5:1 · 2 × TB6600 a 1/16 ·
 2 finales de carrera NC · 44.444 micropasos/grado · l1=200 mm, l2=150 mm.
 
 Pines: PUL 25/32, DIR 26/33, ENA 27 (activo bajo), finales 16/17, servo 13 (P3).
+
+Cableado: PUL-, DIR- y ENA- de los TB6600 al GND del ESP32 (regreso de la
+senal). El negativo de la fuente de 24 V NO se une al GND del ESP32: las
+entradas son optoacopladas. Micropaso 1/16 = S1 OFF, S2 OFF, S3 ON en la
+tabla mas comun; verificarlo con `bench_motor` (tecla 1 = un cuarto de
+vuelta exacto de la salida del reductor).
 
 ## Cosas que hay que ajustar al montar el mecanismo
 

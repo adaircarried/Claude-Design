@@ -296,7 +296,9 @@ revisa con la tecla `d` y el multímetro que llegan 3.3 V entre `DIR+` y
 5. Toca el disipador de cada driver tras unos minutos: tibio es normal; si
    quema, baja la corriente.
 
-**Etapa C** — cuando esté el protocolo de la U2: ver `docs/PROTOCOLO_U2.md`.
+**Etapa C — protocolo binario y teach pendant.** Cierra el monitor serial
+(el pendant necesita el puerto), y sigue [`pc/README.md`](pc/README.md). El
+protocolo está especificado en [`docs/PROTOCOLO_U2.md`](docs/PROTOCOLO_U2.md).
 
 ---
 
@@ -387,14 +389,15 @@ cercana no es alcanzable.
 
 | Comando | Qué hace |
 |---|---|
-| `HOME` | referencia ambos ejes; el codo primero |
+| `SETZERO [q1 q2]` | **cero enseñado**: la pose actual pasa a ser la referencia (sin argumentos: brazo horizontal, antebrazo colgando). Es el modo actual, sin finales de carrera |
+| `HOME` | referencia con finales de carrera; el codo primero *(solo con `HOMING_MODE = HOMING_SWITCHES`)* |
 | `JOG <eje> <grados>` | mueve un eje, relativo, lento. eje = 1 o 2 |
 | `MOVJ <q1> <q2>` | interpolación articular, ambos ejes llegan juntos |
 | `MOVL <x> <y>` | interpolación lineal, el efector recorre una recta |
 | `SPEED <1-100>` | velocidad para MOVJ y MOVL |
 | `STOP` | paro inmediato con rampa, **mantiene el par** |
 | `STATUS` | posición, estado y diagnóstico |
-| `TEST <pasos> [ciclos]` | mide la pérdida real de pasos |
+| `TEST <pasos> [ciclos]` | mide la pérdida real de pasos *(necesita finales de carrera)* |
 | `ELBOW UP\|DOWN` | configuración del codo para la cinemática inversa |
 | `TELEM ON\|OFF` | flujo periódico de telemetría cada 100 ms |
 | `ENABLE` / `DISABLE` | energiza / libera los drivers |
