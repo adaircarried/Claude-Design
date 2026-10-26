@@ -186,11 +186,11 @@ Tabla del TB6600 más común (la de DFRobot y la mayoría de sus clones):
 etiqueta de tu driver*. *(Una versión anterior de este README daba
 OFF-OFF-OFF, que en esta tabla es 1/32: el robot se habría movido la mitad.)*
 
-**Compruébalo con el programa de banco, no con la tabla.** La tecla `1`
-manda 4000 pulsos, que a 1/16 son **1.25 vueltas exactas del eje del motor**.
-Si ves 2.5 vueltas estás en 1/8; si ves 0.625, en 1/32. La tecla `5` manda
-16 000 pulsos: la **salida del reductor** debe dar una vuelta exacta, lo que
-valida a la vez el micropaso y el 5:1.
+**Compruébalo con el programa de banco, no con la tabla.** El eje del motor
+queda oculto dentro del reductor, así que se mira la **salida**. La tecla `1`
+manda 4000 pulsos, que a 1/16 y con el 5:1 son **un cuarto de vuelta exacto**
+(90°). Si ves media vuelta estás en 1/8; si ves un octavo, en 1/32. La tecla
+`5` manda 16 000 pulsos: **una vuelta exacta** de la salida.
 
 Si cambias de micropaso, cambia `MICROSTEPS` en `config.h`; si no, todos los
 ángulos quedan escalados por el factor equivocado.
@@ -272,8 +272,9 @@ sobre la mesa**, sin el brazo montado.
 Tasks* → `bench_motor` → *Upload and Monitor*. Comandos de una tecla:
 
 1. `e` energiza. El eje debe resistirse si intentas girarlo a mano.
-2. `1`: el eje del **motor** da **1.25 vueltas**. `2` lo regresa.
-3. `5`: la **salida del reductor** da **1 vuelta exacta** (5 del motor).
+2. `1`: la salida del reductor gira **un cuarto de vuelta exacto**. `2` la
+   regresa.
+3. `5`: la salida da **una vuelta exacta**.
 4. Lo mismo con `3`, `4` y `6` para el motor 2.
 5. `v` sube la velocidad hasta 3200 Hz: debe seguir girando sin perder pasos.
 
@@ -283,8 +284,8 @@ revisa con la tecla `d` y el multímetro que llegan 3.3 V entre `DIR+` y
 
 **Etapa B — firmware con la consola** (entorno `esp32dev`):
 
-1. `ENABLE`, luego `JOG 1 90`: el mismo 1.25 vueltas que en la etapa A, pero
-   ahora generado por el hardware del ESP32. Si la etapa A funcionó y esta no,
+1. `ENABLE`, luego `JOG 1 90`: el mismo cuarto de vuelta que en la etapa A,
+   pero ahora generado por el hardware del ESP32. Si la etapa A funcionó y esta no,
    el problema es de software, no de cableado.
 2. Si un eje gira al revés de lo que esperas, cambia `A1_DIR_HIGH_COUNTS_UP`
    (o `A2_…`) en `config.h`. **No recablees el motor.**

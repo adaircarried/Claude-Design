@@ -22,8 +22,9 @@
 #include <Arduino.h>
 #include "../config.h"
 
-/* 90 grados de articulacion = 4000 micropasos = 1.25 vueltas del eje del
- * motor (antes del reductor 5:1). Es la cifra que hay que comprobar a ojo. */
+/* 90 grados de articulacion = 4000 micropasos. El eje del motor queda oculto
+ * dentro del reductor planetario, asi que lo que se comprueba a ojo es la
+ * SALIDA del reductor: un cuarto de vuelta exacto. */
 static const uint32_t PASOS_90_GRADOS   = 4000;
 static const uint32_t PASOS_VUELTA_ART  = 16000;   /* 1 vuelta de articulacion */
 
@@ -52,9 +53,10 @@ static void menu(void)
         "  d       alternar DIR en ambos drivers (para medir con multimetro)\r\n"
         "  ?       este menu\r\n"
         "----------------------------------------------------------------\r\n"
-        "  90 grados de articulacion = 1.25 vueltas del eje del MOTOR\r\n"
-        "  1 vuelta de articulacion  = 5 vueltas del eje del MOTOR\r\n"
-        "  (con micropaso 1/16 y reductor 5:1)\r\n"
+        "  Mira la SALIDA del reductor (el eje que se ve):\r\n"
+        "    teclas 1-4: un CUARTO de vuelta exacto (90 grados)\r\n"
+        "    teclas 5-6: UNA vuelta exacta\r\n"
+        "  Si ves media vuelta, estas en 1/8; si ves un octavo, en 1/32.\r\n"
         "================================================================\r\n");
     Serial.printf("Velocidad: %lu Hz | drivers %s\r\n",
                   (unsigned long)VELOCIDADES_HZ[g_vel_idx],
