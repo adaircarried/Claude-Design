@@ -1,6 +1,7 @@
 # Guía de defensa — Unidad 2
 
-Para preparar la presentación y responder preguntas del código.
+Para preparar la presentación y responder preguntas del código. Si un
+término no te queda claro, está en el [glosario](GLOSARIO_U2.md).
 
 **Cómo usarla mañana:** ábrela en VS Code y pulsa `Ctrl+Shift+V` para verla
 formateada. Las referencias tipo `src/frame.cpp:51` se abren con `Ctrl+P`,
