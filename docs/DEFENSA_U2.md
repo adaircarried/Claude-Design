@@ -329,6 +329,15 @@ primero, que es el orden nativo del ESP32 y de la PC.
 
 ## 5. Preguntas probables y cómo contestarlas
 
+**"Llévalo a la coordenada X = 250, Y = −100."**
+Panel **Ir a coordenada** → escribe X y Y → **MOVJ**. La PC calcula los
+ángulos con la cinemática inversa (`pc/cinematica.py`, la misma matemática
+que `src/kinematics.cpp`; se comprobó que dan los mismos ángulos al milésimo
+de grado) y manda un MOVJ en pasos. Si lo quiere **en línea recta**, el botón
+**MOVL**: la cinemática inversa la resuelve entonces el ESP32, punto a punto
+a lo largo de la recta. Si el punto no se alcanza, la PC o el robot lo
+rechazan y lo dicen.
+
 **¿Por qué binario y no texto?**
 Una orden en texto (`MOVJ 20.00 -60.00`) ocupa unos 18 caracteres que hay que
 convertir con `atof`; la trama binaria tiene los enteros listos, un tamaño

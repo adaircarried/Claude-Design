@@ -43,6 +43,12 @@ En el pendant:
    **CLEAR** antes de mandar un `MOVJ` o un `MOVL`.
 4. **Guardar pose actual…** graba el punto con un nombre en `puntos.json`.
    **Ir (MOVJ)** e **Ir (MOVL)** vuelven a él.
+5. **Ir a coordenada:** escribe los ángulos (q1, q2) o la posición (X, Y) en
+   mm. **Copiar la posición actual** rellena los campos para editar solo lo
+   que quieres cambiar. Para X, Y hay dos botones: **MOVJ** (la PC calcula los
+   ángulos con la cinemática inversa y llega por cualquier camino) y **MOVL**
+   (en línea recta; puede rechazarse si la recta sale del alcance). Usa punto
+   decimal, no coma.
 
 Al conectar, el pendant **no reinicia el ESP32**: abre el puerto con DTR y
 RTS en bajo. Si aun así tu placa se reinicia al conectar, se pierde el cero:

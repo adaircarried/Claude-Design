@@ -8,6 +8,7 @@ Es el programa de la U2 que habla con el ESP32 por el protocolo binario, y a
 la vez la herramienta con la que se enseñan los puntos de la U3:
 
   * Jog articular (J1, J2) y cartesiano (X, Y en linea recta), por pasos
+  * Ir a una coordenada exacta: angulos (q1, q2) o posicion (X, Y)
   * Estado en vivo: posicion, estado, fallos, cola
   * Puntos enseñados: guardar la pose actual con un nombre, ir a ella
     (se guardan en puntos.json, junto a este archivo)
@@ -34,6 +35,7 @@ import time
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
 
+import cinematica as K
 import protocolo as P
 from robot import ErrorRobot, Robot, SinRespuesta
 
@@ -177,6 +179,29 @@ class Pendant:
                       command=lambda _v, x=var: x.set(round(float(_v)))).grid(row=fila, column=1, sticky="ew", padx=4)
             ttk.Label(fv, textvariable=var, width=4).grid(row=fila, column=2)
         fv.columnconfigure(1, weight=1)
+
+        # --- ir a una coordenada exacta ---------------------------------------
+        fc = ttk.LabelFrame(f, text="Ir a coordenada", padding=6)
+        fc.pack(fill="x", pady=6)
+        self.e_q1, self.e_q2, self.e_x, self.e_y = (tk.StringVar() for _ in range(4))
+        for fila, (t1, v1, t2, v2, unidad) in enumerate((("q1", self.e_q1, "q2", self.e_q2, "°"),
+                                                         ("X", self.e_x, "Y", self.e_y, "mm"))):
+            ttk.Label(fc, text=t1).grid(row=fila, column=0, sticky="e")
+            ttk.Entry(fc, textvariable=v1, width=7).grid(row=fila, column=1, padx=2, pady=2)
+            ttk.Label(fc, text=t2).grid(row=fila, column=2, sticky="e")
+            ttk.Entry(fc, textvariable=v2, width=7).grid(row=fila, column=3, padx=2, pady=2)
+            ttk.Label(fc, text=unidad).grid(row=fila, column=4, sticky="w")
+        ttk.Button(fc, text="MOVJ a q1, q2", command=lambda: self.ir_a_coordenada("Q")
+                   ).grid(row=0, column=5, sticky="ew", padx=2)
+        fb = ttk.Frame(fc)
+        fb.grid(row=1, column=5, sticky="ew")
+        ttk.Button(fb, text="MOVJ", width=6, command=lambda: self.ir_a_coordenada("XYJ")).pack(side="left", padx=1)
+        ttk.Button(fb, text="MOVL", width=6, command=lambda: self.ir_a_coordenada("XYL")).pack(side="left", padx=1)
+        ttk.Button(fc, text="Copiar la posición actual", command=self.copiar_actual
+                   ).grid(row=2, column=0, columnspan=6, sticky="ew", pady=(4, 0))
+        ttk.Label(fc, foreground="gray",
+                  text=f"Alcance: radio {K.R_MIN_EFECTIVO_MM:.0f}–{K.R_MAX_MM:.0f} mm, "
+                       f"Y ≥ {K.Y_MIN_MM:.0f} mm").grid(row=3, column=0, columnspan=6, sticky="w")
         return f
 
     def _col_puntos(self, f):
@@ -373,6 +398,61 @@ class Pendant:
         x, y = (st.x_mm + d, st.y_mm) if eje == "X" else (st.x_mm, st.y_mm + d)
         self._en_hilo(f"MOVL {eje}{d:+g} mm -> ({x:.1f}, {y:.1f})",
                       lambda: self.robot.movl(x, y, vel=self.vel_movl.get()) and None)
+
+    # =========================================================================
+    # Ir a una coordenada exacta
+    # =========================================================================
+    def copiar_actual(self):
+        """Rellena los cuatro campos con la posicion actual: punto de partida
+        comodo para editar solo el valor que se quiere cambiar."""
+        st, r = self.est, self.robot
+        if not st or not r:
+            self.log("✗ Sin estado del robot: conecta primero", "err")
+            return
+        self.e_q1.set(f"{r.pasos_a_grados(st.pasos1):.2f}")
+        self.e_q2.set(f"{r.pasos_a_grados(st.pasos2):.2f}")
+        self.e_x.set(f"{st.x_mm:.1f}")
+        self.e_y.set(f"{st.y_mm:.1f}")
+
+    def ir_a_coordenada(self, modo: str):
+        """modo "Q": MOVJ a (q1, q2).  "XYJ": cinematica inversa en la PC y
+        MOVJ, que llega por cualquier camino.  "XYL": MOVL, en linea recta."""
+        st = self.est
+        if not st or not st.con_cero:
+            self.log("✗ Ir a coordenada necesita el cero fijado (SETZERO)", "err")
+            return
+        try:
+            if modo == "Q":
+                a, b = float(self.e_q1.get()), float(self.e_q2.get())
+            else:
+                a, b = float(self.e_x.get()), float(self.e_y.get())
+        except ValueError:
+            self.log("✗ Escribe números en los campos (punto decimal, no coma)", "err")
+            return
+
+        if modo == "XYJ":
+            try:
+                q1, q2 = K.inversa(a, b, codo_arriba=True)
+            except ValueError as e:
+                self.log(f"✗ {e}", "err")
+                return
+            nombre = f"MOVJ a X,Y ({a:.1f}, {b:.1f}) -> q = ({q1:.2f}, {q2:.2f})"
+        elif modo == "Q":
+            q1, q2 = a, b
+            x, y = K.directa(q1, q2)
+            nombre = f"MOVJ a q = ({q1:.2f}, {q2:.2f}) -> X,Y = ({x:.1f}, {y:.1f})"
+        else:
+            nombre = f"MOVL en línea recta a X,Y ({a:.1f}, {b:.1f})"
+
+        def tarea():
+            r = self.robot
+            if modo == "XYL":
+                seq = r.movl(a, b, vel=self.vel_movl.get(), avisar=True)
+            else:
+                seq = r.movj(q1, q2, vel=self.vel_movj.get(), avisar=True)
+            r.esperar_fin(seq, timeout=60, latido=False)
+            return "llegó"
+        self._en_hilo(nombre, tarea)
 
     # =========================================================================
     # Puntos enseñados

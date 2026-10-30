@@ -62,6 +62,17 @@ universitario de Control de Robots, con tres parciales evaluados.
   (`AXIS_MAX_SPEED_HZ`) y 4000 pasos/s^2 de aceleracion.
 - Positivo = antihorario visto de lado con el tablero a la DERECHA.
 
+## Pendientes para la U3
+
+- **La polea del codo patina en ciertas posiciones** (reportado el 30 oct).
+  Revisar el diseño mecanico: tension o tensor de la banda, banda dentada
+  (GT2) en vez de transmision por friccion, prisionero contra cara plana del
+  eje. Mientras patine, el codo pierde la posicion sin que el firmware lo
+  sepa (lazo abierto). Confirmar ademas la relacion de la transmision y si el
+  motor del codo va en el codo o en la base: si la banda cruza el eje del
+  hombro, el angulo del codo queda acoplado al del hombro y hay que
+  compensarlo en la cinematica.
+
 ## Convencion del codo (corregida en oct 2026)
 
 `ELBOW_UP` = q2 < 0 = el codo queda fisicamente por encima de la recta
