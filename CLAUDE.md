@@ -12,15 +12,15 @@ universitario de Control de Robots, con tres parciales evaluados.
   carpeta `firmware_dc/`, y NO comparte codigo con este. Misma arquitectura
   conceptual: mismo `Setpoint_t`, misma cola, mismas 4 tareas y nucleos.
 - **Este firmware (steppers + TB6600)** — es la linea principal desde octubre
-  2026. Compila y arranca en hardware real; consola y finales de carrera
-  probados en banco. **Todavia no ha movido un motor.**
+  2026. **Validado en el robot montado el 30 oct** (fase 3): JOG, SETZERO,
+  MOVJ sincronizado, MOVL, STOP y sostenimiento del hombro horizontal.
 - **Parcial 2** (entrega 30 oct 2026) — **implementado el 26 oct.**
   Firmware: `crc16`, `frame` (puros, con tests nativos) y `proto.cpp` dentro
   de TaskComms; la consola de texto sigue disponible (modo dual). PC:
   `pc/protocolo.py`, `pc/robot.py`, `pc/pendant.py`. Verificado de extremo a
   extremo compilando el firmware real contra un simulador del hardware
-  (35 casos) y manejando el pendant en una pantalla virtual. **Aun no se ha
-  probado en el ESP32 real**: los steppers todavia no han girado.
+  (35 casos) y manejando el pendant en una pantalla virtual. La consola de
+  texto ya se probo en el robot real; el pendant, en la fase 4 del 30 oct.
 - **Parcial 3** (30 nov 2026) — vision, pinza SG90, logica de juego. Reutiliza
   `kinematics.cpp`. La API de poses en NVS ya esta en `persistence.h`;
   `MOTION_GRIPPER` ya esta en el enum.

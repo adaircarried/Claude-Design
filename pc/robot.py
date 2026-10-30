@@ -229,18 +229,22 @@ class Robot:
         return self.pedir(P.Cmd.MOVL, flags=P.FLAG_NOTIFY if avisar else 0,
                           payload=P.pl_movl(x_mm, y_mm, vel)).seq
 
-    def esperar_fin(self, seq: int, timeout: float = 30.0) -> None:
+    def esperar_fin(self, seq: int, timeout: float = 30.0, latido: bool = True) -> None:
         """Espera el DONE de una orden enviada con avisar=True.
 
-        Mientras espera sigue pidiendo STATUS: eso hace de latido para el
-        watchdog del firmware, que pararia el robot tras 1 s de silencio.
+        Con latido=True, mientras espera sigue pidiendo STATUS: eso alimenta el
+        watchdog del firmware, que pararia el robot tras 1 s de silencio. Un
+        programa sin otra fuente de latido (la U3) debe dejarlo asi. El pendant
+        pasa latido=False porque su hilo de sondeo ya hace de latido, y asi la
+        casilla "Latido activo" controla de verdad el watchdog en la demo.
         Lanza ErrorRobot si llega FAILED (por ejemplo, ABORTADO por un STOP)."""
         limite = time.monotonic() + timeout
         while time.monotonic() < limite:
             try:
                 ev = self._eventos.get(timeout=0.2)
             except queue.Empty:
-                self.estado()                           # latido
+                if latido:
+                    self.estado()                       # latido
                 continue
             if ev.seq != seq:
                 continue

@@ -445,7 +445,9 @@ class Pendant:
                 seq = r.movj(p["q1"], p["q2"], vel=self.vel_movj.get(), avisar=True)
             else:
                 seq = r.movl(p["x"], p["y"], vel=self.vel_movl.get(), avisar=True)
-            r.esperar_fin(seq, timeout=60)
+            # latido=False: el latido lo da el hilo de sondeo, y asi la casilla
+            # "Latido activo" puede demostrar el watchdog en plena trayectoria.
+            r.esperar_fin(seq, timeout=60, latido=False)
             return f"llegó a '{n}'"
         self._en_hilo(f"{modo} a '{n}'", tarea)
 
