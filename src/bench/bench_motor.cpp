@@ -122,7 +122,7 @@ static void mover(const char *nombre, uint8_t pin_pul, uint8_t pin_dir,
  * pulsos. Sintoma: el hombro SUBE el brazo a horizontal, pero ya detenido no
  * lo sostiene y lo deja caer despacio, saltando pasos.
  * Aqui se manda, cada 50 ms, un micropaso adelante y uno atras a los DOS
- * motores. La posicion neta no cambia (0.0045 grados en la salida, invisible)
+ * motores. La posicion neta no cambia (1 micropaso = 0.0225 grados en la salida)
  * y el driver nunca ve el reposo. Si con esto el brazo deja de caer, la causa
  * era esa y el firmware puede hacer lo mismo.
  * -------------------------------------------------------------------------*/

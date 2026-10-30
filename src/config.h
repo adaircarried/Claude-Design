@@ -108,7 +108,10 @@
  * horizontalmente hacia +X; q2 = 0 con el antebrazo alineado con el brazo.
  * Angulos positivos = antihorario visto desde el lado del motor.
  * -------------------------------------------------------------------------*/
-#define A1_MIN_DEG              (-90.0f)
+#define A1_MIN_DEG              (-95.0f)   /* -90 es el brazo colgando, su pose de
+                                              reposo: el limite queda un poco mas
+                                              alla para que estacionarlo ahi no
+                                              dispare un fallo por redondeo */
 #define A1_MAX_DEG              ( 90.0f)
 #define A2_MIN_DEG              (-135.0f)
 #define A2_MAX_DEG              ( 135.0f)
@@ -123,14 +126,21 @@
  * El limite real no es el motor: es el par disponible contra la gravedad y la
  * inercia del brazo. Empieza bajo y sube midiendo con el comando TEST.
  * -------------------------------------------------------------------------*/
-#define AXIS_MAX_SPEED_HZ       3000U   /* a SPEED 100 */
+#define AXIS_MAX_SPEED_HZ       1600U   /* a SPEED 100 = 36 grados/s. Elegido en
+                                           banco el 30 oct: ambos ejes llegaron
+                                           a 3200 Hz sin rampa, pero entre 800
+                                           y 1600 el movimiento es mas limpio y
+                                           sin forzar los motores */
 #define AXIS_MIN_SPEED_HZ       50U     /* piso: FastAccelStepper rechaza 0 */
-#define AXIS_MAX_ACCEL          8000U   /* micropasos/s^2 (~0.37 s a v_max) */
+#define AXIS_MAX_ACCEL          4000U   /* micropasos/s^2 (0.4 s hasta v_max).
+                                           Suave a proposito: el hombro levanta
+                                           el brazo con el motor del codo
+                                           incluido y va justo de par */
 #define JOG_SPEED_HZ            800U    /* JOG siempre lento, es manual      */
 #define JOG_ACCEL               4000U
 
 /* MOVL: avance del efector en linea recta */
-#define MOVL_MAX_FEED_MMS       80.0f   /* mm/s a SPEED 100 */
+#define MOVL_MAX_FEED_MMS       50.0f   /* mm/s a SPEED 100 */
 #define MOVL_SEGMENT_TICKS_MS   20      /* periodo de actualizacion del target */
 #define MOVL_VALIDATE_SAMPLES   40      /* puntos de la recta a validar antes  */
                                         /* de empezar a moverse                */
@@ -199,6 +209,23 @@
 
 /* El eje 2 (codo) hace home PRIMERO para que el brazo se pliegue antes de que
  * el hombro barra el espacio de trabajo y se lleve algo por delante. */
+
+/* ===========================================================================
+ * 6b. SOSTENIMIENTO CON PULSOS
+ * ===========================================================================
+ * El TB6600 de este robot baja la corriente a la mitad cuando deja de recibir
+ * pulsos. A media corriente el hombro no sostiene el brazo horizontal y lo
+ * deja caer despacio, saltando pasos (medido en banco el 30 oct: sube el brazo
+ * sin problema, pero ya detenido cae, incluso a 2.0 A; con pulsos periodicos
+ * se sostiene).
+ *
+ * Remedio: cada HOLD_DITHER_MS, a cada eje que NO se este moviendo se le da un
+ * micropaso, alternando el sentido (+1, -1, +1...). El driver nunca ve el
+ * reposo y mantiene la corriente completa. La desviacion es como mucho de un
+ * micropaso: 0.0225 grados, 0.14 mm a 350 mm de alcance. Invisible.
+ * -------------------------------------------------------------------------*/
+#define HOLD_DITHER_ENABLE      1
+#define HOLD_DITHER_MS          50
 
 /* ===========================================================================
  * 7. TAREAS DE FREERTOS

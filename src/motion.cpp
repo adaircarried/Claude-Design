@@ -53,6 +53,42 @@ static ExecState_t g_exec = EXEC_IDLE;
 static Setpoint_t g_cur;
 static bool       g_cur_active = false;
 
+/* ---------------------------------------------------------------------------
+ * SOSTENIMIENTO CON PULSOS (ver config.h, seccion 6b)
+ * Se aplica POR EJE y no solo con el robot quieto: durante un JOG del codo de
+ * varios segundos, el hombro esta parado, el driver le baja la corriente y el
+ * brazo se cae. Por eso cualquier eje detenido recibe su micropaso, aunque el
+ * otro se este moviendo.
+ *
+ * Solo en EXEC_IDLE y EXEC_POINT. Nunca en EXEC_LINE, donde el interpolador
+ * manda objetivos absolutos cada 20 ms y un movimiento relativo se cruzaria
+ * con ellos, ni en EXEC_STOPPING.
+ *
+ * La posicion la sigue llevando FastAccelStepper, micropaso incluido: el
+ * siguiente movimiento absoluto llega exacto a su destino.
+ * -------------------------------------------------------------------------*/
+static void hold_dither(void)
+{
+#if HOLD_DITHER_ENABLE
+    static uint32_t last_ms = 0;
+    static int8_t   sign[2] = { 1, 1 };
+
+    if (!sv_drivers_enabled()) return;
+    const uint32_t now = millis();
+    if ((uint32_t)(now - last_ms) < HOLD_DITHER_MS) return;
+    last_ms = now;
+
+    FastAccelStepper *ax[2] = { g_a1, g_a2 };
+    for (int i = 0; i < 2; ++i) {
+        if (ax[i]->isRunning()) continue;          /* este eje se esta moviendo */
+        ax[i]->setSpeedInHz(JOG_SPEED_HZ);
+        ax[i]->setAcceleration(JOG_ACCEL);
+        ax[i]->move(sign[i]);
+        sign[i] = (int8_t)-sign[i];
+    }
+#endif
+}
+
 static void post_event(uint8_t seq, MotionEventKind_t kind, ErrCode_t code)
 {
     if (!motionEventQueue) return;
@@ -589,9 +625,15 @@ void TaskMotion(void *pv)
         switch (g_exec) {
 
         case EXEC_IDLE:
-            if (xQueueReceive(setpointQueue, &sp, 0) == pdTRUE) {
+            /* Solo se toma una orden con los dos ejes detenidos: si quedara un
+             * micropaso de sostenimiento en vuelo, SETZERO redefiniria la
+             * posicion con el motor moviendose. Un micropaso tarda ~1 ms y el
+             * tick es de 5 ms, asi que en la practica no retrasa nada. */
+            if (!g_a1->isRunning() && !g_a2->isRunning() &&
+                xQueueReceive(setpointQueue, &sp, 0) == pdTRUE) {
                 dispatch(&sp);
             }
+            if (g_exec == EXEC_IDLE) hold_dither();
             break;
 
         case EXEC_POINT:
@@ -599,6 +641,8 @@ void TaskMotion(void *pv)
                 g_exec = EXEC_IDLE;
                 if (sv_get_state() == STATE_MOVING) sv_set_state(STATE_IDLE);
                 sp_done();
+            } else {
+                hold_dither();          /* sostiene el eje que no participa */
             }
             break;
 

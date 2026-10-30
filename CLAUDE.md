@@ -48,6 +48,20 @@ universitario de Control de Robots, con tres parciales evaluados.
 | 3: 19-25 oct | integracion | programa de PC en Python | demo completa |
 | 4: 26-30 oct | ensayo | documentacion, guion | codigo congelado el 26 |
 
+## Hallazgos del banco (30 oct 2026, robot montado, ESP-32S NodeMCU)
+
+- Cableado OK; DIP 1/16 confirmado (salida a 90 grados exactos).
+- Codo giraba al reves: `A2_DIR_HIGH_COUNTS_UP = false`. Hombro bien.
+- **El TB6600 baja la corriente a la mitad en reposo**: el hombro subia el
+  brazo a horizontal pero, detenido, lo dejaba caer despacio (aun a 2.0 A).
+  Con pulsos periodicos se sostiene -> `HOLD_DITHER_*` en config.h: cada
+  50 ms, un micropaso alterno a cada eje detenido. Por eso STATUS puede leer
+  +-1 micropaso respecto del destino.
+- Driver #1 (hombro) a 2.0 A (SW4 ON, SW5 OFF, SW6 OFF); driver #2 a 1.5 A.
+- Ambos ejes llegan a 3200 Hz sin rampa; se eligio 1600 Hz como maximo
+  (`AXIS_MAX_SPEED_HZ`) y 4000 pasos/s^2 de aceleracion.
+- Positivo = antihorario visto de lado con el tablero a la DERECHA.
+
 ## Convencion del codo (corregida en oct 2026)
 
 `ELBOW_UP` = q2 < 0 = el codo queda fisicamente por encima de la recta
