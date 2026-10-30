@@ -61,6 +61,7 @@ static void menu(void)
         "  5 / 6   motor 1 / motor 2: UNA VUELTA COMPLETA de la salida\r\n"
         "          ** SOLO CON EL MOTOR DESMONTADO: con el brazo puesto, choca **\r\n"
         "  e       energizar / liberar los drivers (ENA, GPIO 27)\r\n"
+        "  h       sostener con pulsos: prueba de la caida del hombro\r\n"
         "  v       cambiar velocidad\r\n"
         "  d       alternar DIR en ambos drivers (para medir con multimetro)\r\n"
         "  ?       este menu\r\n"
@@ -115,6 +116,44 @@ static void mover(const char *nombre, uint8_t pin_pul, uint8_t pin_dir,
     Serial.printf("  listo en %.2f s\r\n", (millis() - t0) / 1000.0);
 }
 
+/* ---------------------------------------------------------------------------
+ * PRUEBA DE SOSTENIMIENTO CON PULSOS (tecla h)
+ * Muchas tarjetas TB6600 bajan la corriente a la mitad cuando dejan de recibir
+ * pulsos. Sintoma: el hombro SUBE el brazo a horizontal, pero ya detenido no
+ * lo sostiene y lo deja caer despacio, saltando pasos.
+ * Aqui se manda, cada 50 ms, un micropaso adelante y uno atras a los DOS
+ * motores. La posicion neta no cambia (0.0045 grados en la salida, invisible)
+ * y el driver nunca ve el reposo. Si con esto el brazo deja de caer, la causa
+ * era esa y el firmware puede hacer lo mismo.
+ * -------------------------------------------------------------------------*/
+static void pulso(uint8_t pin_pul)
+{
+    digitalWrite(pin_pul, HIGH); delayMicroseconds(10); digitalWrite(pin_pul, LOW);
+}
+
+static void sostener_con_pulsos(void)
+{
+    if (!g_energizado) {
+        Serial.print("Los drivers estan LIBRES: pulsa 'e' para energizar primero\r\n");
+        return;
+    }
+    Serial.print("Sosteniendo con un micropaso de ida y vuelta cada 50 ms.\r\n"
+                 "Observa si el brazo sigue cayendo. Cualquier tecla para salir.\r\n");
+    const uint32_t t0 = millis();
+    while (!Serial.available()) {
+        digitalWrite(PIN_A1_DIR, HIGH); digitalWrite(PIN_A2_DIR, HIGH);
+        delayMicroseconds(50);
+        pulso(PIN_A1_PUL); pulso(PIN_A2_PUL);
+        delayMicroseconds(500);
+        digitalWrite(PIN_A1_DIR, LOW);  digitalWrite(PIN_A2_DIR, LOW);
+        delayMicroseconds(50);
+        pulso(PIN_A1_PUL); pulso(PIN_A2_PUL);
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+    while (Serial.available()) Serial.read();
+    Serial.printf("  fin de la prueba tras %.1f s\r\n", (millis() - t0) / 1000.0);
+}
+
 void setup(void)
 {
     Serial.begin(SERIAL_BAUD);
@@ -148,6 +187,7 @@ void loop(void)
     case '5': mover("Motor 1", PIN_A1_PUL, PIN_A1_DIR, A1_DIR_HIGH_COUNTS_UP, true,  PASOS_VUELTA_ART); break;
     case '6': mover("Motor 2", PIN_A2_PUL, PIN_A2_DIR, A2_DIR_HIGH_COUNTS_UP, true,  PASOS_VUELTA_ART); break;
     case 'e': case 'E': energizar(!g_energizado); break;
+    case 'h': case 'H': sostener_con_pulsos(); break;
     case 'v': case 'V':
         g_vel_idx = (g_vel_idx + 1) % (sizeof(VELOCIDADES_HZ) / sizeof(VELOCIDADES_HZ[0]));
         Serial.printf("Velocidad: %lu Hz\r\n", (unsigned long)VELOCIDADES_HZ[g_vel_idx]);
