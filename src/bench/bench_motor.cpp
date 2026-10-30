@@ -75,7 +75,7 @@ static void menu(void)
 }
 
 static void mover(const char *nombre, uint8_t pin_pul, uint8_t pin_dir,
-                  bool positivo, uint32_t pasos)
+                  bool dir_high_up, bool positivo, uint32_t pasos)
 {
     if (!g_energizado) {
         Serial.print("Los drivers estan LIBRES: pulsa 'e' para energizar primero\r\n");
@@ -88,7 +88,9 @@ static void mover(const char *nombre, uint8_t pin_pul, uint8_t pin_dir,
                   positivo ? "+" : "-", (unsigned long)pasos,
                   (unsigned long)hz, (double)pasos / hz);
 
-    digitalWrite(pin_dir, positivo ? HIGH : LOW);
+    /* Mismo convenio que el firmware (A?_DIR_HIGH_COUNTS_UP de config.h):
+     * asi la tecla "+" gira hacia el mismo lado aqui y en el robot. */
+    digitalWrite(pin_dir, (positivo == dir_high_up) ? HIGH : LOW);
     delayMicroseconds(50);          /* establecimiento de DIR: el TB6600 pide >= 5 us */
 
     const uint32_t t0 = millis();
@@ -134,17 +136,17 @@ void loop(void)
     const char c = (char)Serial.read();
 
     switch (c) {
-    case '1': mover("Motor 1", PIN_A1_PUL, PIN_A1_DIR, true,  pasos_prueba()); break;
-    case '2': mover("Motor 1", PIN_A1_PUL, PIN_A1_DIR, false, pasos_prueba()); break;
-    case '3': mover("Motor 2", PIN_A2_PUL, PIN_A2_DIR, true,  pasos_prueba()); break;
-    case '4': mover("Motor 2", PIN_A2_PUL, PIN_A2_DIR, false, pasos_prueba()); break;
+    case '1': mover("Motor 1", PIN_A1_PUL, PIN_A1_DIR, A1_DIR_HIGH_COUNTS_UP, true,  pasos_prueba()); break;
+    case '2': mover("Motor 1", PIN_A1_PUL, PIN_A1_DIR, A1_DIR_HIGH_COUNTS_UP, false, pasos_prueba()); break;
+    case '3': mover("Motor 2", PIN_A2_PUL, PIN_A2_DIR, A2_DIR_HIGH_COUNTS_UP, true,  pasos_prueba()); break;
+    case '4': mover("Motor 2", PIN_A2_PUL, PIN_A2_DIR, A2_DIR_HIGH_COUNTS_UP, false, pasos_prueba()); break;
     case 'g': case 'G':
         g_ang_idx = (g_ang_idx + 1) % (sizeof(ANGULOS_PRUEBA) / sizeof(ANGULOS_PRUEBA[0]));
         Serial.printf("Angulo de prueba: %.0f grados (%lu pasos)\r\n",
                       (double)ANGULOS_PRUEBA[g_ang_idx], (unsigned long)pasos_prueba());
         break;
-    case '5': mover("Motor 1", PIN_A1_PUL, PIN_A1_DIR, true,  PASOS_VUELTA_ART); break;
-    case '6': mover("Motor 2", PIN_A2_PUL, PIN_A2_DIR, true,  PASOS_VUELTA_ART); break;
+    case '5': mover("Motor 1", PIN_A1_PUL, PIN_A1_DIR, A1_DIR_HIGH_COUNTS_UP, true,  PASOS_VUELTA_ART); break;
+    case '6': mover("Motor 2", PIN_A2_PUL, PIN_A2_DIR, A2_DIR_HIGH_COUNTS_UP, true,  PASOS_VUELTA_ART); break;
     case 'e': case 'E': energizar(!g_energizado); break;
     case 'v': case 'V':
         g_vel_idx = (g_vel_idx + 1) % (sizeof(VELOCIDADES_HZ) / sizeof(VELOCIDADES_HZ[0]));

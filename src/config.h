@@ -75,7 +75,8 @@
  * en vez de recablear el motor (NUNCA desconectes un motor con el driver
  * energizado: destruye el TB6600). */
 #define A1_DIR_HIGH_COUNTS_UP   true
-#define A2_DIR_HIGH_COUNTS_UP   true
+#define A2_DIR_HIGH_COUNTS_UP   false   /* medido en banco (30 oct): con true el
+                                           codo giraba al reves */
 
 /* El TB6600 exige ~5 us de establecimiento de DIR antes del flanco de PUL.
  * 20 us da margen de sobra para los optoacopladores, que son lentos. */
