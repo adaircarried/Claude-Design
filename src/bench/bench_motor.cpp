@@ -22,14 +22,24 @@
 #include <Arduino.h>
 #include "../config.h"
 
-/* 90 grados de articulacion = 4000 micropasos. El eje del motor queda oculto
- * dentro del reductor planetario, asi que lo que se comprueba a ojo es la
- * SALIDA del reductor: un cuarto de vuelta exacto. */
-static const uint32_t PASOS_90_GRADOS   = 4000;
+/* Angulo de prueba de las teclas 1-4, elegible con 'g'. Arranca en 10 grados
+ * porque el brazo puede estar YA MONTADO: un giro grande en el sentido
+ * equivocado lo estrellaria. Con 90 grados (4000 micropasos) se comprueba el
+ * micropaso a ojo: un cuarto de vuelta exacto de la salida del reductor (el
+ * eje del motor queda oculto dentro del planetario). */
+static const float    ANGULOS_PRUEBA[]  = { 10.0f, 45.0f, 90.0f };
+static uint8_t        g_ang_idx         = 0;
 static const uint32_t PASOS_VUELTA_ART  = 16000;   /* 1 vuelta de articulacion */
 
+/* Arranca en 400 Hz: sin rampa, levantando el brazo contra la gravedad, una
+ * velocidad de arranque alta puede ahogar el motor (vibra y no sube). */
 static const uint32_t VELOCIDADES_HZ[]  = { 400, 800, 1600, 3200 };
-static uint8_t        g_vel_idx         = 1;       /* arranca en 800 Hz */
+static uint8_t        g_vel_idx         = 0;
+
+static uint32_t pasos_prueba(void)
+{
+    return (uint32_t)lroundf(ANGULOS_PRUEBA[g_ang_idx] * PASOS_VUELTA_ART / 360.0f);
+}
 static bool           g_energizado      = false;
 static bool           g_dir_nivel       = false;
 
@@ -45,21 +55,22 @@ static void menu(void)
 {
     Serial.print(
         "\r\n=========== PRUEBA DE BANCO - cableado de los TB6600 ===========\r\n"
-        "  1 / 2   motor 1 (hombro, PUL 25 / DIR 26)  +90 / -90 grados\r\n"
-        "  3 / 4   motor 2 (codo,   PUL 32 / DIR 33)  +90 / -90 grados\r\n"
+        "  1 / 2   motor 1 (hombro, PUL 25 / DIR 26)  +angulo / -angulo\r\n"
+        "  3 / 4   motor 2 (codo,   PUL 32 / DIR 33)  +angulo / -angulo\r\n"
+        "  g       cambiar el angulo de prueba (10, 45, 90 grados)\r\n"
         "  5 / 6   motor 1 / motor 2: UNA VUELTA COMPLETA de la salida\r\n"
+        "          ** SOLO CON EL MOTOR DESMONTADO: con el brazo puesto, choca **\r\n"
         "  e       energizar / liberar los drivers (ENA, GPIO 27)\r\n"
         "  v       cambiar velocidad\r\n"
         "  d       alternar DIR en ambos drivers (para medir con multimetro)\r\n"
         "  ?       este menu\r\n"
         "----------------------------------------------------------------\r\n"
-        "  Mira la SALIDA del reductor (el eje que se ve):\r\n"
-        "    teclas 1-4: un CUARTO de vuelta exacto (90 grados)\r\n"
-        "    teclas 5-6: UNA vuelta exacta\r\n"
+        "  Con el angulo en 90: un CUARTO de vuelta exacto de la salida.\r\n"
         "  Si ves media vuelta, estas en 1/8; si ves un octavo, en 1/32.\r\n"
+        "  Cualquier tecla detiene un movimiento en curso.\r\n"
         "================================================================\r\n");
-    Serial.printf("Velocidad: %lu Hz | drivers %s\r\n",
-                  (unsigned long)VELOCIDADES_HZ[g_vel_idx],
+    Serial.printf("Angulo de prueba: %.0f grados | velocidad: %lu Hz | drivers %s\r\n",
+                  (double)ANGULOS_PRUEBA[g_ang_idx], (unsigned long)VELOCIDADES_HZ[g_vel_idx],
                   g_energizado ? "ENERGIZADOS" : "LIBRES");
 }
 
@@ -123,10 +134,15 @@ void loop(void)
     const char c = (char)Serial.read();
 
     switch (c) {
-    case '1': mover("Motor 1", PIN_A1_PUL, PIN_A1_DIR, true,  PASOS_90_GRADOS);  break;
-    case '2': mover("Motor 1", PIN_A1_PUL, PIN_A1_DIR, false, PASOS_90_GRADOS);  break;
-    case '3': mover("Motor 2", PIN_A2_PUL, PIN_A2_DIR, true,  PASOS_90_GRADOS);  break;
-    case '4': mover("Motor 2", PIN_A2_PUL, PIN_A2_DIR, false, PASOS_90_GRADOS);  break;
+    case '1': mover("Motor 1", PIN_A1_PUL, PIN_A1_DIR, true,  pasos_prueba()); break;
+    case '2': mover("Motor 1", PIN_A1_PUL, PIN_A1_DIR, false, pasos_prueba()); break;
+    case '3': mover("Motor 2", PIN_A2_PUL, PIN_A2_DIR, true,  pasos_prueba()); break;
+    case '4': mover("Motor 2", PIN_A2_PUL, PIN_A2_DIR, false, pasos_prueba()); break;
+    case 'g': case 'G':
+        g_ang_idx = (g_ang_idx + 1) % (sizeof(ANGULOS_PRUEBA) / sizeof(ANGULOS_PRUEBA[0]));
+        Serial.printf("Angulo de prueba: %.0f grados (%lu pasos)\r\n",
+                      (double)ANGULOS_PRUEBA[g_ang_idx], (unsigned long)pasos_prueba());
+        break;
     case '5': mover("Motor 1", PIN_A1_PUL, PIN_A1_DIR, true,  PASOS_VUELTA_ART); break;
     case '6': mover("Motor 2", PIN_A2_PUL, PIN_A2_DIR, true,  PASOS_VUELTA_ART); break;
     case 'e': case 'E': energizar(!g_energizado); break;
