@@ -58,6 +58,13 @@ class Pendant:
         self.est: P.Status | None = None
         self.diag: P.Diag | None = None
         self.latido = tk.BooleanVar(value=True)
+        # Copia en un bool de Python para el hilo de sondeo: Tkinter no es
+        # seguro entre hilos, y leer una variable de Tk desde otro hilo puede
+        # bloquearse o lanzar una excepcion que mataria el latido.
+        self._latido_activo = True
+        self.latido.trace_add("write", lambda *_: setattr(self, "_latido_activo", self.latido.get()))
+        self._t_estado = 0.0            # instante del ultimo STATUS recibido
+        self._ultimo_error_sondeo = ""
         self.cola_gui: "queue.Queue" = queue.Queue()
         self.puntos = self._cargar_puntos()
         self._vivo = True
@@ -278,29 +285,66 @@ class Pendant:
                 self.log(f"✓ {nombre}" + (f": {res}" if res else ""), "ok")
             except ErrorRobot as e:
                 self.log(f"✗ {nombre}: rechazado por el robot, {P.nombre_error(e.codigo)}", "err")
+                self._explicar_fallo(e.codigo)
             except SinRespuesta as e:
                 self.log(f"✗ {nombre}: {e}", "err")
             except Exception as e:
                 self.log(f"✗ {nombre}: {type(e).__name__}: {e}", "err")
         threading.Thread(target=tarea, daemon=True).start()
 
+    MOTIVOS = {
+        "ENLACE_PERDIDO": "el watchdog no recibió latido en el plazo: la PC dejó de mandar STATUS",
+        "PARO_USUARIO": "se pulsó STOP (Esc); pulsa CLEAR para seguir",
+        "FUERA_DE_ESPACIO": "la trayectoria pasó fuera del espacio de trabajo",
+        "LIMITE_ARTICULAR": "una articulación pasó su límite",
+    }
+
+    def _explicar_fallo(self, codigo: int):
+        """Tras un ABORTADO o un FALLO_ACTIVO, pregunta al robot por que y lo
+        deja escrito: la proxima vez no hay que adivinar la causa."""
+        if codigo not in (P.Err.ABORTADO, P.Err.FALLO_ACTIVO) or not self.robot:
+            return
+        try:
+            f = self.robot.estado().nombre_fallo
+        except Exception:                               # noqa: BLE001
+            return
+        if f != "ninguno":
+            self.log(f"   motivo: fallo {f}, {self.MOTIVOS.get(f, 'ver STATUS')}", "err")
+
     def _sondeo(self):
         """Pide STATUS 5 veces por segundo y DIAG una vez por segundo.
         Es tambien el LATIDO del watchdog: si se desmarca 'Latido activo', el
-        firmware deja de recibir tramas y para el robot al segundo."""
+        firmware deja de recibir tramas y para el robot.
+
+        ESTE HILO NO PUEDE MORIR. Si muere, se acaba el latido y el watchdog
+        del firmware frena cada movimiento largo: paros "sin motivo" yendo a
+        puntos validos. Por eso atrapa CUALQUIER excepcion, la registra una
+        vez y sigue."""
         ultimo_diag = 0.0
+        seguidos = 0                                   # STATUS perdidos seguidos
         while self._vivo:
             time.sleep(PERIODO_ESTADO_S)
             r = self.robot
-            if not r or not self.latido.get():
+            if not r or not self._latido_activo:
                 continue
             try:
                 self.est = r.estado()
+                self._t_estado = time.monotonic()
+                self._ultimo_error_sondeo = ""
+                seguidos = 0
                 if time.monotonic() - ultimo_diag > PERIODO_DIAG_S:
                     self.diag = r.diag()
                     ultimo_diag = time.monotonic()
-            except (SinRespuesta, ErrorRobot):
-                self.est = None
+            except Exception as e:                      # noqa: BLE001 - a proposito
+                # Una respuesta perdida suelta es normal (p. ej. en la prueba
+                # de desborde); dos seguidas ya acercan al watchdog (1 s).
+                seguidos += 1
+                if isinstance(e, SinRespuesta) and seguidos < 2:
+                    continue
+                texto = f"{type(e).__name__}: {e}"
+                if texto != self._ultimo_error_sondeo:  # no inundar el registro
+                    self._ultimo_error_sondeo = texto
+                    self.log(f"⚠ Sondeo de estado: {texto} (el latido sigue intentándolo)", "err")
 
     def _pintar_estado(self):
         r, st, d = self.robot, self.est, self.diag
@@ -315,7 +359,12 @@ class Pendant:
         v["q2"].set(f"{r.pasos_a_grados(st.pasos2):+8.2f}°  ({st.pasos2} pasos)")
         v["xy"].set(f"{st.x_mm:+7.1f}, {st.y_mm:+7.1f} mm")
         v["cola"].set(f"{st.en_cola}" + ("  (moviendo)" if st.en_movimiento else ""))
-        self.lb_rtt.configure(text=f"ida y vuelta {r.rtt_ms:.1f} ms")
+        edad = time.monotonic() - self._t_estado
+        if self._latido_activo and edad > 1.0:
+            self.lb_rtt.configure(text=f"⚠ sin STATUS hace {edad:.0f} s: el latido no llega",
+                                  foreground="#b00020")
+        else:
+            self.lb_rtt.configure(text=f"ida y vuelta {r.rtt_ms:.1f} ms", foreground="")
         if d:
             self.v_diag.set(
                 f"tramas OK   {d.ok:6d}    rechazadas {d.rechazadas:5d}\n"
@@ -396,8 +445,9 @@ class Pendant:
             return
         d = signo * self.paso_mm.get()
         x, y = (st.x_mm + d, st.y_mm) if eje == "X" else (st.x_mm, st.y_mm + d)
+        vel = self.vel_movl.get()                    # se lee aqui, en el hilo de Tk
         self._en_hilo(f"MOVL {eje}{d:+g} mm -> ({x:.1f}, {y:.1f})",
-                      lambda: self.robot.movl(x, y, vel=self.vel_movl.get()) and None)
+                      lambda: self.robot.movl(x, y, vel=vel) and None)
 
     # =========================================================================
     # Ir a una coordenada exacta
@@ -444,12 +494,13 @@ class Pendant:
         else:
             nombre = f"MOVL en línea recta a X,Y ({a:.1f}, {b:.1f})"
 
+        vel_j, vel_l = self.vel_movj.get(), self.vel_movl.get()   # en el hilo de Tk
         def tarea():
             r = self.robot
             if modo == "XYL":
-                seq = r.movl(a, b, vel=self.vel_movl.get(), avisar=True)
+                seq = r.movl(a, b, vel=vel_l, avisar=True)
             else:
-                seq = r.movj(q1, q2, vel=self.vel_movj.get(), avisar=True)
+                seq = r.movj(q1, q2, vel=vel_j, avisar=True)
             r.esperar_fin(seq, timeout=60, latido=False)
             return "llegó"
         self._en_hilo(nombre, tarea)
@@ -519,12 +570,13 @@ class Pendant:
         if not n:
             return
         p = self.puntos[n]
+        vel_j, vel_l = self.vel_movj.get(), self.vel_movl.get()   # en el hilo de Tk
         def tarea():
             r = self.robot
             if modo == "MOVJ":
-                seq = r.movj(p["q1"], p["q2"], vel=self.vel_movj.get(), avisar=True)
+                seq = r.movj(p["q1"], p["q2"], vel=vel_j, avisar=True)
             else:
-                seq = r.movl(p["x"], p["y"], vel=self.vel_movl.get(), avisar=True)
+                seq = r.movl(p["x"], p["y"], vel=vel_l, avisar=True)
             # latido=False: el latido lo da el hilo de sondeo, y asi la casilla
             # "Latido activo" puede demostrar el watchdog en plena trayectoria.
             r.esperar_fin(seq, timeout=60, latido=False)

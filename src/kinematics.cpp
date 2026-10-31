@@ -26,19 +26,51 @@ Point_t kin_forward(float q1_deg, float q2_deg)
     return p;
 }
 
-IkResult_t kin_point_in_workspace(float x, float y)
+IkResult_t kin_point_in_workspace_tol(float x, float y, float tol_mm)
 {
     const float r = sqrtf(x * x + y * y);
-    if (r > WS_R_MAX_MM) return IK_OUT_OF_REACH;
-    if (r < WS_R_MIN_MM) return IK_TOO_CLOSE;
-    if (y < WS_Y_MIN_MM) return IK_BELOW_TABLE;
+    if (r > WS_R_MAX_MM + tol_mm) return IK_OUT_OF_REACH;
+    if (r < WS_R_MIN_MM - tol_mm) return IK_TOO_CLOSE;
+    if (y < WS_Y_MIN_MM - tol_mm) return IK_BELOW_TABLE;
     return IK_OK;
+}
+
+IkResult_t kin_point_in_workspace(float x, float y)
+{
+    return kin_point_in_workspace_tol(x, y, 0.0f);
+}
+
+bool kin_joints_in_limits_tol(float q1_deg, float q2_deg, float tol_deg)
+{
+    return (q1_deg >= A1_MIN_DEG - tol_deg && q1_deg <= A1_MAX_DEG + tol_deg &&
+            q2_deg >= A2_MIN_DEG - tol_deg && q2_deg <= A2_MAX_DEG + tol_deg);
 }
 
 bool kin_joints_in_limits(float q1_deg, float q2_deg)
 {
-    return (q1_deg >= A1_MIN_DEG && q1_deg <= A1_MAX_DEG &&
-            q2_deg >= A2_MIN_DEG && q2_deg <= A2_MAX_DEG);
+    return kin_joints_in_limits_tol(q1_deg, q2_deg, 0.0f);
+}
+
+IkResult_t kin_validate_joint_path(float q1a, float q2a, float q1b, float q2b,
+                                   int samples, float tol_deg, float tol_mm,
+                                   Point_t *out_fail)
+{
+    if (samples < 2) samples = 2;
+
+    for (int i = 0; i <= samples; ++i) {
+        const float s  = (float)i / (float)samples;
+        const float q1 = q1a + (q1b - q1a) * s;
+        const float q2 = q2a + (q2b - q2a) * s;
+        const Point_t p = kin_forward(q1, q2);
+
+        IkResult_t r = kin_joints_in_limits_tol(q1, q2, tol_deg) ? IK_OK : IK_JOINT_LIMIT;
+        if (r == IK_OK) r = kin_point_in_workspace_tol(p.x, p.y, tol_mm);
+        if (r != IK_OK) {
+            if (out_fail) *out_fail = p;
+            return r;
+        }
+    }
+    return IK_OK;
 }
 
 /* ---------------------------------------------------------------------------
@@ -61,7 +93,13 @@ bool kin_joints_in_limits(float q1_deg, float q2_deg)
  * -------------------------------------------------------------------------*/
 IkResult_t kin_inverse(float x, float y, ElbowConfig_t elbow, Joints_t *out)
 {
-    const IkResult_t ws = kin_point_in_workspace(x, y);
+    return kin_inverse_tol(x, y, elbow, 0.0f, 0.0f, out);
+}
+
+IkResult_t kin_inverse_tol(float x, float y, ElbowConfig_t elbow,
+                           float tol_deg, float tol_mm, Joints_t *out)
+{
+    const IkResult_t ws = kin_point_in_workspace_tol(x, y, tol_mm);
     if (ws != IK_OK) return ws;
 
     const float l1 = LINK_L1_MM;
@@ -86,7 +124,7 @@ IkResult_t kin_inverse(float x, float y, ElbowConfig_t elbow, Joints_t *out)
     const float q1_deg = rad2deg(q1);
     const float q2_deg = rad2deg(q2);
 
-    if (!kin_joints_in_limits(q1_deg, q2_deg)) return IK_JOINT_LIMIT;
+    if (!kin_joints_in_limits_tol(q1_deg, q2_deg, tol_deg)) return IK_JOINT_LIMIT;
 
     if (out) { out->q1 = q1_deg; out->q2 = q2_deg; }
     return IK_OK;
@@ -94,6 +132,13 @@ IkResult_t kin_inverse(float x, float y, ElbowConfig_t elbow, Joints_t *out)
 
 IkResult_t kin_validate_line(Point_t a, Point_t b, ElbowConfig_t elbow,
                              int samples, Point_t *out_fail)
+{
+    return kin_validate_line_tol(a, b, elbow, samples, 0.0f, 0.0f, out_fail);
+}
+
+IkResult_t kin_validate_line_tol(Point_t a, Point_t b, ElbowConfig_t elbow,
+                                 int samples, float tol_deg, float tol_mm,
+                                 Point_t *out_fail)
 {
     if (samples < 2) samples = 2;
 
@@ -103,7 +148,7 @@ IkResult_t kin_validate_line(Point_t a, Point_t b, ElbowConfig_t elbow,
         p.x = a.x + (b.x - a.x) * s;
         p.y = a.y + (b.y - a.y) * s;
 
-        const IkResult_t r = kin_inverse(p.x, p.y, elbow, NULL);
+        const IkResult_t r = kin_inverse_tol(p.x, p.y, elbow, tol_deg, tol_mm, NULL);
         if (r != IK_OK) {
             if (out_fail) *out_fail = p;
             return r;

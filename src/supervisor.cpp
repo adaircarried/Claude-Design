@@ -194,12 +194,13 @@ void TaskSupervisor(void *pv)
                 float q1, q2;
                 motion_get_joints(&q1, &q2);
 
-                if (!kin_joints_in_limits(q1, q2)) {
+                /* Con margen: ver SUPERVISOR_TOL_* en config.h. */
+                if (!kin_joints_in_limits_tol(q1, q2, SUPERVISOR_TOL_DEG)) {
                     sv_request_abort(FAULT_SOFT_LIMIT);
                     report_printf("EVT SOFT_LIMIT q1=%.2f q2=%.2f\n", q1, q2);
                 } else {
                     const Point_t p = kin_forward(q1, q2);
-                    if (kin_point_in_workspace(p.x, p.y) != IK_OK) {
+                    if (kin_point_in_workspace_tol(p.x, p.y, SUPERVISOR_TOL_MM) != IK_OK) {
                         sv_request_abort(FAULT_WORKSPACE);
                         report_printf("EVT WORKSPACE x=%.1f y=%.1f\n", p.x, p.y);
                     }

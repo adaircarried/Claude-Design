@@ -101,6 +101,24 @@
  * mas alla de la mesa. AJUSTA ESTE VALOR AL MONTAR EL ROBOT. */
 #define WS_Y_MIN_MM             (-250.0f)
 
+/* Margen del SUPERVISOR al vigilar la posicion actual (no el de las ordenes:
+ * una orden fuera de limites se sigue rechazando sin margen).
+ * Por que hace falta: un destino justo en el borde (y = -250, q1 = 90, ...)
+ * es valido, pero el redondeo a micropasos y el HOLD_DITHER (+-1 micropaso
+ * en reposo) lo sacan del borde por milesimas. Sin margen, el supervisor lo
+ * tomaba como violacion y paraba el robot "sin motivo". 1 micropaso = 0.0225
+ * grados y mueve el efector < 0.15 mm; los margenes cubren eso con holgura y
+ * siguen siendo pequenos frente a cualquier choque real. */
+#define SUPERVISOR_TOL_DEG      0.5f
+#define SUPERVISOR_TOL_MM       2.0f
+
+/* Puntos de la trayectoria ARTICULAR de un MOVJ que se revisan antes de
+ * arrancarlo. El MOVJ sincronizado avanza en linea recta en (q1, q2), pero en
+ * (x, y) traza una curva que, cerca de los bordes, puede bajar de la mesa o
+ * salir del anillo aunque los dos extremos sean validos. Mejor rechazarlo de
+ * entrada (ERR_TRAYECTORIA) que frenar a media trayectoria. */
+#define MOVJ_VALIDATE_SAMPLES   32
+
 /* ===========================================================================
  * 4. LIMITES ARTICULARES        <<< AJUSTAR AL MONTAR EL MECANISMO >>>
  * ===========================================================================

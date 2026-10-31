@@ -268,6 +268,76 @@ static void test_pose_de_referencia_es_valida(void)
     TEST_ASSERT_FLOAT_WITHIN(0.05f, ZERO_POSE_Q2_DEG, j.q2);
 }
 
+/* Los paros "sin motivo" del 31 oct: un destino justo en un borde es valido,
+ * pero el redondeo a micropasos y el HOLD_DITHER lo sacan del borde por un
+ * micropaso. El supervisor debe tolerarlo; un exceso de verdad, no. */
+static void test_supervisor_tolera_un_micropaso_en_el_borde(void)
+{
+    const float micropaso = 1.0f / STEPS_PER_DEG;
+
+    /* Limite articular: un micropaso de mas */
+    TEST_ASSERT_FALSE(kin_joints_in_limits(A1_MAX_DEG + micropaso, -90.0f));
+    TEST_ASSERT_TRUE(kin_joints_in_limits_tol(A1_MAX_DEG + micropaso, -90.0f,
+                                              SUPERVISOR_TOL_DEG));
+    /* ... pero un grado de mas sigue siendo un fallo */
+    TEST_ASSERT_FALSE(kin_joints_in_limits_tol(A1_MAX_DEG + 1.0f, -90.0f,
+                                               SUPERVISOR_TOL_DEG));
+
+    /* Espacio de trabajo: una decima de mm bajo la mesa */
+    TEST_ASSERT_EQUAL(IK_BELOW_TABLE, kin_point_in_workspace(200.0f, WS_Y_MIN_MM - 0.1f));
+    TEST_ASSERT_EQUAL(IK_OK, kin_point_in_workspace_tol(200.0f, WS_Y_MIN_MM - 0.1f,
+                                                        SUPERVISOR_TOL_MM));
+    TEST_ASSERT_EQUAL(IK_BELOW_TABLE, kin_point_in_workspace_tol(200.0f, WS_Y_MIN_MM - 5.0f,
+                                                                 SUPERVISOR_TOL_MM));
+    /* Y el margen no lleva a la singularidad del brazo estirado */
+    TEST_ASSERT_TRUE(WS_R_MAX_MM + SUPERVISOR_TOL_MM < LINK_L1_MM + LINK_L2_MM);
+    TEST_ASSERT_TRUE(WS_R_MIN_MM - SUPERVISOR_TOL_MM > fabsf(LINK_L1_MM - LINK_L2_MM));
+}
+
+/* Un MOVL que arranca desde un punto un micropaso bajo la mesa (donde quedo
+ * el brazo tras ir a y = WS_Y_MIN) y corre sobre el borde es valido. */
+static void test_movl_desde_un_borde_redondeado(void)
+{
+    const Point_t a = { 180.0f, WS_Y_MIN_MM - 0.05f };
+    const Point_t b = { 220.0f, WS_Y_MIN_MM };
+    TEST_ASSERT_TRUE(kin_validate_line(a, b, ELBOW_UP, 40, NULL) != IK_OK);
+    TEST_ASSERT_EQUAL(IK_OK, kin_validate_line_tol(a, b, ELBOW_UP, 40,
+                                                   SUPERVISOR_TOL_DEG,
+                                                   SUPERVISOR_TOL_MM, NULL));
+}
+
+/* Un MOVJ entre dos poses validas puede pasar fuera del espacio en medio:
+ * de (-95,-135) a (-85,+135) el codo cruza por q2 = 0 con el brazo apuntando
+ * hacia abajo y estirado, a y = -350, bajo la mesa. Debe rechazarse ANTES de
+ * arrancar, no frenarse a medio camino. */
+static void test_movj_que_baja_de_la_mesa_en_medio(void)
+{
+    TEST_ASSERT_TRUE(kin_joints_in_limits(-95.0f, -135.0f));
+    TEST_ASSERT_TRUE(kin_joints_in_limits(-85.0f,  135.0f));
+    const Point_t pa = kin_forward(-95.0f, -135.0f);
+    const Point_t pb = kin_forward(-85.0f,  135.0f);
+    TEST_ASSERT_EQUAL(IK_OK, kin_point_in_workspace(pa.x, pa.y));
+    TEST_ASSERT_EQUAL(IK_OK, kin_point_in_workspace(pb.x, pb.y));
+
+    Point_t fallo;
+    const IkResult_t r = kin_validate_joint_path(-95.0f, -135.0f, -85.0f, 135.0f,
+                                                 MOVJ_VALIDATE_SAMPLES,
+                                                 SUPERVISOR_TOL_DEG,
+                                                 SUPERVISOR_TOL_MM, &fallo);
+    TEST_ASSERT_TRUE(r != IK_OK);
+    TEST_ASSERT_TRUE(fallo.y < WS_Y_MIN_MM || sqrtf(fallo.x * fallo.x + fallo.y * fallo.y) > WS_R_MAX_MM);
+}
+
+/* Y un MOVJ normal (de la pose de referencia a un punto de juego) pasa. */
+static void test_movj_normal_es_valido(void)
+{
+    TEST_ASSERT_EQUAL(IK_OK, kin_validate_joint_path(ZERO_POSE_Q1_DEG, ZERO_POSE_Q2_DEG,
+                                                     60.0f, -60.0f,
+                                                     MOVJ_VALIDATE_SAMPLES,
+                                                     SUPERVISOR_TOL_DEG,
+                                                     SUPERVISOR_TOL_MM, NULL));
+}
+
 int main(int, char **)
 {
     UNITY_BEGIN();
@@ -289,5 +359,9 @@ int main(int, char **)
     RUN_TEST(test_limites_articulares);
     RUN_TEST(test_pose_de_home_es_valida);
     RUN_TEST(test_pose_de_referencia_es_valida);
+    RUN_TEST(test_supervisor_tolera_un_micropaso_en_el_borde);
+    RUN_TEST(test_movl_desde_un_borde_redondeado);
+    RUN_TEST(test_movj_que_baja_de_la_mesa_en_medio);
+    RUN_TEST(test_movj_normal_es_valido);
     return UNITY_END();
 }

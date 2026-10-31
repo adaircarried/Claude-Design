@@ -62,6 +62,25 @@ universitario de Control de Robots, con tres parciales evaluados.
   (`AXIS_MAX_SPEED_HZ`) y 4000 pasos/s^2 de aceleracion.
 - Positivo = antihorario visto de lado con el tablero a la DERECHA.
 
+## Paros en puntos validos (reportado el 31 oct, corregido)
+
+- **Causa principal**: el supervisor vigilaba la posicion actual SIN margen.
+  Un destino justo en un borde (y = -250, q1 = 90, q2 = -135, r = 340) es
+  valido, pero el redondeo a micropasos y el `HOLD_DITHER` lo sacan un
+  micropaso; ~1 s despues saltaba `FUERA_DE_ESPACIO`/`LIMITE_ARTICULAR` con
+  el robot quieto, y todo lo siguiente fallaba con `FALLO_ACTIVO` hasta un
+  CLEAR. Reproducido en el simulador con el firmware de la demo (9 de 11
+  casos fallan) y corregido: `SUPERVISOR_TOL_DEG` 0.5 / `SUPERVISOR_TOL_MM`
+  2.0 en config.h. Las ORDENES se siguen validando sin margen.
+- El MOVL usa ese mismo margen al partir de la posicion actual.
+- El MOVJ ahora valida su curva antes de arrancar (`MOVJ_VALIDATE_SAMPLES`):
+  si pasaria bajo la mesa, `FAILED TRAYECTORIA` sin moverse, en vez de
+  frenar a medio camino.
+- PC: escrituras al puerto serializadas (`_lock_tx` en robot.py) y el hilo de
+  sondeo del pendant ya no puede morir (antes, una excepcion lo mataba, se
+  acababa el latido y el watchdog frenaba los movimientos largos). Tras un
+  ABORTADO, el registro dice el motivo.
+
 ## Pendientes para la U3
 
 - **La polea del codo patina en ciertas posiciones** (reportado el 30 oct).

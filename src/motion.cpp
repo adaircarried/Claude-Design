@@ -270,7 +270,10 @@ static void line_tick(void)
         p.y = g_line_a.y + (g_line_b.y - g_line_a.y) * g_line_s;
 
         Joints_t j;
-        if (kin_inverse(p.x, p.y, g_elbow, &j) != IK_OK) {
+        /* Con el margen del supervisor: el punto de partida es la posicion
+         * actual, que puede estar un micropaso fuera de un borde. */
+        if (kin_inverse_tol(p.x, p.y, g_elbow, SUPERVISOR_TOL_DEG,
+                            SUPERVISOR_TOL_MM, &j) != IK_OK) {
             /* No deberia ocurrir: la recta completa se valido antes de
              * arrancar. Si ocurre, se para en vez de seguir a ciegas. */
             sv_request_abort(FAULT_WORKSPACE);
@@ -321,8 +324,10 @@ static bool start_movl(float x, float y, uint16_t pct)
      * puntos alcanzables puede atravesar el agujero central. Sin esto, el
      * brazo arrancaria y se detendria a media trayectoria. */
     Point_t fail;
-    const IkResult_t v = kin_validate_line(g_line_a, g_line_b, g_elbow,
-                                           MOVL_VALIDATE_SAMPLES, &fail);
+    const IkResult_t v = kin_validate_line_tol(g_line_a, g_line_b, g_elbow,
+                                               MOVL_VALIDATE_SAMPLES,
+                                               SUPERVISOR_TOL_DEG,
+                                               SUPERVISOR_TOL_MM, &fail);
     if (v != IK_OK) {
         report_printf("ERR MOVL_PATH codigo=%d punto=(%.1f,%.1f)\n",
                       (int)v, fail.x, fail.y);
@@ -555,6 +560,21 @@ static void dispatch(const Setpoint_t *sp)
             report_printf("ERR WORKSPACE destino=(%.1f,%.1f)\n", p.x, p.y);
             sp_fail(ERR_FUERA_DE_RANGO);
             break;
+        }
+        {
+            /* Los extremos son validos; falta el camino. Ver
+             * MOVJ_VALIDATE_SAMPLES en config.h. */
+            float q1, q2;
+            motion_get_joints(&q1, &q2);
+            Point_t fail;
+            if (kin_validate_joint_path(q1, q2, sp->target_a, sp->target_b,
+                                        MOVJ_VALIDATE_SAMPLES, SUPERVISOR_TOL_DEG,
+                                        SUPERVISOR_TOL_MM, &fail) != IK_OK) {
+                report_printf("ERR MOVJ_TRAYECTORIA sale en (%.1f,%.1f): "
+                              "usa un punto intermedio o MOVL\n", fail.x, fail.y);
+                sp_fail(ERR_TRAYECTORIA);
+                break;
+            }
         }
         if (!start_movj_steps(kin_deg_to_steps(sp->target_a),
                               kin_deg_to_steps(sp->target_b), sp->speed_pct))

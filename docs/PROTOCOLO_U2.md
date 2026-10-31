@@ -171,7 +171,7 @@ dice `FAILED`. **Ningún error es silencioso.**
 | `0x0C` | `DESBORDE_RX` | Se llenó el buffer de recepción |
 | `0x0D` | `NO_IMPLEMENTADO` | Comando reservado (`GRIPPER` hasta la U3) |
 | `0x0E` | `RAMA_CODO` | `MOVL` desde la rama del codo contraria |
-| `0x0F` | `TRAYECTORIA` | La recta del `MOVL` sale del espacio de trabajo |
+| `0x0F` | `TRAYECTORIA` | La recta del `MOVL`, o la curva del `MOVJ`, sale del espacio de trabajo a medio camino (llega en `FAILED`, antes de moverse) |
 | `0x10` | `ABORTADO` | Un `STOP`, un fallo o el watchdog interrumpieron el movimiento (llega en `FAILED`) |
 
 Para `CRC`, `TRAMA` y `TIMEOUT` el `SEQ` del `NACK` puede venir corrupto (es

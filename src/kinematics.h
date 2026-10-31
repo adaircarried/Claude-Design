@@ -37,9 +37,32 @@ Point_t kin_forward(float q1_deg, float q2_deg);
  * los limites articulares. En cualquier otro caso *out queda sin tocar.  */
 IkResult_t kin_inverse(float x, float y, ElbowConfig_t elbow, Joints_t *out);
 
+/* Igual, pero aceptando puntos hasta tol_mm fuera del espacio de trabajo y
+ * angulos hasta tol_deg fuera de los limites. Solo para el MOVL, cuyo punto
+ * de partida es la posicion ACTUAL, que puede estar un micropaso fuera del
+ * borde (ver SUPERVISOR_TOL_* en config.h). */
+IkResult_t kin_inverse_tol(float x, float y, ElbowConfig_t elbow,
+                           float tol_deg, float tol_mm, Joints_t *out);
+
 /* Comprobaciones individuales, utiles para el supervisor. */
 bool kin_joints_in_limits(float q1_deg, float q2_deg);
 IkResult_t kin_point_in_workspace(float x, float y);
+
+/* Lo mismo con un margen de holgura (tol >= 0) hacia afuera. Las usa el
+ * supervisor al vigilar la posicion actual: ver SUPERVISOR_TOL_* en config.h. */
+bool kin_joints_in_limits_tol(float q1_deg, float q2_deg, float tol_deg);
+IkResult_t kin_point_in_workspace_tol(float x, float y, float tol_mm);
+
+/* Valida la trayectoria de un MOVJ sincronizado: muestrea `samples` poses
+ * sobre la recta articular (q1a,q2a) -> (q1b,q2b) y comprueba que cada una
+ * caiga en el espacio de trabajo y en los limites articulares, con los
+ * mismos margenes que usa el supervisor: asi se rechaza de entrada justo lo
+ * que el supervisor pararia a medio camino, y nada mas.
+ * Devuelve el primer error, o IK_OK. `out_fail` recibe el punto (x, y) que
+ * fallo; puede ser NULL. */
+IkResult_t kin_validate_joint_path(float q1a, float q2a, float q1b, float q2b,
+                                   int samples, float tol_deg, float tol_mm,
+                                   Point_t *out_fail);
 
 /* Valida una recta completa ANTES de empezar a recorrerla.
  * Muestrea `samples` puntos entre a y b (incluidos los extremos) y devuelve
@@ -52,6 +75,9 @@ IkResult_t kin_point_in_workspace(float x, float y);
  * `out_fail` recibe el punto que fallo (puede ser NULL). */
 IkResult_t kin_validate_line(Point_t a, Point_t b, ElbowConfig_t elbow,
                              int samples, Point_t *out_fail);
+IkResult_t kin_validate_line_tol(Point_t a, Point_t b, ElbowConfig_t elbow,
+                                 int samples, float tol_deg, float tol_mm,
+                                 Point_t *out_fail);
 
 /* ---------------------------------------------------------------------------
  * ALCANCE EFECTIVO  -  lee esto antes de fijar los limites articulares

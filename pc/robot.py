@@ -91,6 +91,11 @@ class Robot:
         self._t = transporte
         self._parser = P.Parser()
         self._lock = threading.Lock()
+        # Un solo hilo escribe al puerto a la vez. El sondeo (latido) y las
+        # ordenes corren en hilos distintos; en Windows, pyserial comparte una
+        # estructura interna entre escrituras y dos simultaneas pueden fallar
+        # con una excepcion. Sin este candado eso mataba el latido.
+        self._lock_tx = threading.Lock()
         self._seq = 0
         self._pendientes: dict[int, list] = {}          # seq -> [Event, Trama | None]
         self._eventos: "queue.Queue[P.Trama]" = queue.Queue()
@@ -165,7 +170,13 @@ class Robot:
         with self._lock:
             self._pendientes[seq] = [ev, None]
         t0 = time.perf_counter()
-        self._t.write(datos)
+        try:
+            with self._lock_tx:
+                self._t.write(datos)
+        except Exception:
+            with self._lock:
+                self._pendientes.pop(seq, None)
+            raise
         ok = ev.wait(timeout)
         with self._lock:
             _, resp = self._pendientes.pop(seq, [None, None])
@@ -259,7 +270,8 @@ class Robot:
         return self._pedir_bytes(seq, datos, cmd, timeout)
 
     def escribir_crudo(self, datos: bytes):
-        self._t.write(datos)
+        with self._lock_tx:
+            self._t.write(datos)
 
     def reservar_seq(self) -> int:
         with self._lock:
